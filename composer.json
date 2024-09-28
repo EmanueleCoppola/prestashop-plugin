@@ -1,0 +1,28 @@
+{
+    "name": "satispay/prestashop",
+    "description": "A PrestaShop module for Satispay payments.",
+    "authors": [
+        {
+            "name": "Emanuele Coppola",
+            "email": "emanuele.coppola@satispay.com"
+        }
+    ],
+    "license": "MIT",
+    "type": "prestashop-module",
+    "require": {
+        "php": ">=7.1",
+        "satispay/gbusiness-api-php-sdk": "^1.3",
+        "nesbot/carbon": "^2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Satispay\\Prestashop\\": "./"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "preferred-install": "dist",
+        "prepend-autoloader": false
+    }
+}
