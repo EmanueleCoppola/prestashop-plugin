@@ -2,10 +2,14 @@
 
 namespace Satispay\Prestashop\Classes\Lock;
 
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
+
 // Prestashop
 use \Db;
-use PrestaShopDatabaseException;
-use PrestaShopException;
+use \PrestaShopDatabaseException;
+use \PrestaShopException;
 
 //
 use Carbon\Carbon;
