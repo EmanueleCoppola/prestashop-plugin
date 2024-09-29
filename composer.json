@@ -1,5 +1,5 @@
 {
-    "name": "satispay/prestashop",
+    "name": "satispay/prestashop-module",
     "description": "A PrestaShop module for Satispay payments.",
     "authors": [
         {
