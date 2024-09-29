@@ -1,1 +1,6 @@
-/tmp
+# building
+tmp/
+
+# Composer
+vendor/
+composer.lock
