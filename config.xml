@@ -2,11 +2,10 @@
 <module>
     <name>satispay</name>
     <displayName><![CDATA[Satispay]]></displayName>
-    <version><![CDATA[2.4.3]]></version>
-    <description><![CDATA[Save time and money by accepting payments from your customers with Satispay. Free, simple, secure! #doitsmart]]></description>
+    <version><![CDATA[2.5.0]]></version>
+    <description><![CDATA[Save time and money by accepting customer payments with Satispay. Simple, fast, and secure!]]></description>
     <author><![CDATA[Satispay]]></author>
     <tab><![CDATA[payments_gateways]]></tab>
     <is_configurable>1</is_configurable>
     <need_instance>1</need_instance>
-	<limited_countries></limited_countries>
 </module>
