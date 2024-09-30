@@ -177,12 +177,12 @@ class Lock
      */
     public function block($seconds, $callback = null)
     {
-        $starting = ((int) Carbon::now()->format('Uu')) / 1000;
+        $starting = Carbon::now()->getPreciseTimestamp(3) / 1000;
 
         $milliseconds = $seconds * 1000;
 
         while (!$this->acquire()) {
-            $now = ((int) Carbon::now()->format('Uu')) / 1000;
+            $now = Carbon::now()->getPreciseTimestamp(3) / 1000;
 
             if (($now + $this->sleepMilliseconds - $milliseconds) >= $starting) {
                 throw new LockTimeoutException;
