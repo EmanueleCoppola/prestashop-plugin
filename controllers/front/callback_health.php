@@ -4,10 +4,6 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-// Prestashop
-use \Configuration;
-
-//
 use \Satispay;
 
 /**
@@ -24,11 +20,12 @@ class SatispayCallback_HealthModuleFrontController extends ModuleFrontController
      */
     public function initContent()
     {
-        $nonce = Configuration::get(Satispay::SATIPAY_CALLBACK_HEALTH_NONCE);
+        /** @var Satispay $satispay */
+        $satispay = $this->module;
 
-        if ($nonce && Tools::getValue('nonce') === $nonce) {
-            Configuration::updateValue(Satispay::SATIPAY_CALLBACK_HEALTH_STATUS, 'success');
-        }
+        $satispay->callbackHealth->validate(
+            Tools::getValue('nonce')
+        );
 
         header('HTTP/1.1 204 No Content');
 
