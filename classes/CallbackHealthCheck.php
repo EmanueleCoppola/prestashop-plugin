@@ -25,10 +25,10 @@ use SatispayGBusiness\Payment;
  * creating test payments and verifying their responses within a specified
  * time frame.
  */
-class CallbackHealth
+class CallbackHealthCheck
 {
     /**
-     * CallbackHealth constants.
+     * CallbackHealthCheck constants.
      *
      * If we don't receive an update within X minutes
      * we consider the callback health failed.
@@ -39,10 +39,10 @@ class CallbackHealth
     const PAYMENT_DURATION_SECONDS = 60;
 
     // statuses
-    const TODO = 'todo';
-    const PENDING = 'pending';
-    const SUCCESS = 'success';
-    const FAILED = 'failed';
+    const STATUS_TODO = 'todo';
+    const STATUS_PENDING = 'pending';
+    const STATUS_SUCCESS = 'success';
+    const STATUS_FAIL = 'fail';
 
     /**
      * The Satispay module.
@@ -59,7 +59,7 @@ class CallbackHealth
     protected $context;
 
     /**
-     * The CallbackHealth constructor.
+     * The CallbackHealthCheck constructor.
      */
     public function __construct($module)
     {
@@ -111,7 +111,7 @@ class CallbackHealth
                         ->format("Y-m-d\TH:i:s.v\Z")
             ]);
 
-            Configuration::updateValue(Satispay::SATIPAY_CALLBACK_HEALTH_STATUS, self::PENDING);
+            Configuration::updateValue(Satispay::SATIPAY_CALLBACK_HEALTH_STATUS, self::STATUS_PENDING);
 
             Configuration::updateValue(
                 Satispay::SATIPAY_CALLBACK_HEALTH_TIMESTAMP,
@@ -159,7 +159,7 @@ class CallbackHealth
                 )
         ) {
             Configuration::updateValue(Satispay::SATIPAY_CALLBACK_HEALTH_NONCE, null);
-            Configuration::updateValue(Satispay::SATIPAY_CALLBACK_HEALTH_STATUS, self::FAILED);
+            Configuration::updateValue(Satispay::SATIPAY_CALLBACK_HEALTH_STATUS, self::STATUS_FAIL);
             Configuration::updateValue(Satispay::SATIPAY_CALLBACK_HEALTH_TIMESTAMP, null);
         }
     }
@@ -182,7 +182,7 @@ class CallbackHealth
 
         if ($_nonce && $nonce === $_nonce) {
             Configuration::updateValue(Satispay::SATIPAY_CALLBACK_HEALTH_NONCE, null);
-            Configuration::updateValue(Satispay::SATIPAY_CALLBACK_HEALTH_STATUS, self::SUCCESS);
+            Configuration::updateValue(Satispay::SATIPAY_CALLBACK_HEALTH_STATUS, self::STATUS_SUCCESS);
             Configuration::updateValue(Satispay::SATIPAY_CALLBACK_HEALTH_TIMESTAMP, null);
         }
     }
