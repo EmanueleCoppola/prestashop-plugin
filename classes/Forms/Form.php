@@ -142,6 +142,13 @@ abstract class Form
     abstract protected function fields();
 
     /**
+     * Retrieves the current values for the form fields.
+     *
+     * @return array An associative array of field names and their values.
+     */
+    abstract protected function values();
+
+    /**
      * Renders the form using the PrestaShop HelperForm instance.
      *
      * Generates the HTML representation of the form by using the
@@ -157,6 +164,10 @@ abstract class Form
      */
     public function render()
     {
+        $this->form->submit_action = $this->name();
+
+        $this->form->tpl_vars['fields_value'] = $this->values();
+
         return $this->form->generateForm([$this->fields()]);
     }
 
@@ -189,6 +200,7 @@ abstract class Form
     public function verify()
     {
         if (Tools::isSubmit($this->name())) {
+            $this->module->log(get_class($this) . "@verify submitted form {$this->name()}");
             $this->process();
         }
     }
