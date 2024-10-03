@@ -12,12 +12,12 @@ use \DbQuery;
 use \ObjectModel;
 
 /**
- * Class SatispayPayment.
+ * Class SatispayPendingPayment.
  */
-class SatispayPayment extends ObjectModel
+class SatispayPendingPayment extends ObjectModel
 {
     /**
-     * @var int Primary key of the SatispayPayment model.
+     * @var int Primary key of the SatispayPendingPayment model.
      */
     public $id;
 
@@ -37,9 +37,9 @@ class SatispayPayment extends ObjectModel
     public $reference;
 
     /**
-     * @var int The order amount.
+     * @var int The order amount in cents.
      */
-    public $amount;
+    public $amount_unit;
 
     /**
      * @var string Date and time when the payment object was created.
@@ -52,21 +52,21 @@ class SatispayPayment extends ObjectModel
     public $date_upd;
 
     /**
-     * Definition of the SatispayPayment entity.
+     * Definition of the SatispayPendingPayment entity.
      * 
      * @see ObjectModel::$definition
      * 
      * @var array
      */
     public static $definition = [
-        'table' => 'satispay_payments',
+        'table' => 'satispay_pending_payments',
         'primary' => 'id',
         'multilang' => false,
         'fields' => [
             'cart_id' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedId'],
             'payment_id' => ['type' => self::TYPE_STRING, 'validate' => 'isString'],
             'reference' => ['type' => self::TYPE_STRING, 'validate' => 'isString'],
-            'amount' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedId'],
+            'amount_unit' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedId'],
             'date_add' => ['type' => self::TYPE_DATE, 'validate' => 'isDateFormat'],
             'date_upd' => ['type' => self::TYPE_DATE, 'validate' => 'isDateFormat'],
         ],
@@ -74,11 +74,11 @@ class SatispayPayment extends ObjectModel
     ];
 
     /**
-     * Retrieves a SatispayPayment object by the Satispay payment id.
+     * Retrieves a SatispayPendingPayment object by the Satispay payment id.
      *
      * @param string $payment_id The Satispay payment id
      * 
-     * @return SatispayPayment|null The corresponding SatispayPayment object or null if not found
+     * @return SatispayPendingPayment|null The corresponding SatispayPendingPayment object or null if not found
      */
     public static function getByPaymentId($payment_id)
     {
@@ -87,21 +87,22 @@ class SatispayPayment extends ObjectModel
         $query
             ->select('*')
             ->from(self::$definition['table'])
-            ->where('transaction_id = ' . pSQL($payment_id));
+            ->where("payment_id = '" . pSQL($payment_id) . "'");
 
-        return 
-            (new self())
-                ->hydrate(
-                    Db::getInstance()->getRow($query)
-                );
+        $satispayPendingPayment = new self();
+        $satispayPendingPayment->hydrate(
+            Db::getInstance()->getRow($query)
+        );
+
+        return $satispayPendingPayment;
     }
 
     /**
-     * Retrieves a SatispayPayment object by the cart id.
+     * Retrieves a SatispayPendingPayment object by the cart id.
      *
      * @param int $cart_id The PrestaShop cart id
      * 
-     * @return SatispayPayment|null The corresponding SatispayPayment object or null if not found
+     * @return SatispayPendingPayment|null The corresponding SatispayPendingPayment object or null if not found
      */
     public static function getByCartId($cart_id)
     {
@@ -111,11 +112,12 @@ class SatispayPayment extends ObjectModel
             ->select('id')
             ->from(self::$definition['table'])
             ->where('cart_id = ' . pSQL($cart_id));
+        
+        $satispayPendingPayment = new self();
+        $satispayPendingPayment->hydrate(
+            Db::getInstance()->getRow($query)
+        );
 
-        return 
-            (new self())
-                ->hydrate(
-                    Db::getInstance()->getRow($query)
-                );
+        return $satispayPendingPayment;
     }
 }
