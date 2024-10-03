@@ -97,7 +97,7 @@ class CallbackHealthCheck
                         ->link
                         ->getModuleLink(
                             $this->module->name,
-                            'callback_health',
+                            'callback_health_check',
                             [
                                 'nonce' => $nonce,
                                 'payment_id' => '{uuid}',

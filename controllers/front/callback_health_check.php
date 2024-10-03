@@ -4,7 +4,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-use \Satispay;
+use Satispay;
 
 /**
  * Class SatispayCallback_Health_CheckModuleFrontController
@@ -29,6 +29,6 @@ class SatispayCallback_Health_CheckModuleFrontController extends ModuleFrontCont
 
         header('HTTP/1.1 204 No Content');
 
-        exit;
+        return;
     }
 }
