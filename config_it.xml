@@ -2,8 +2,8 @@
 <module>
     <name>satispay</name>
     <displayName><![CDATA[Satispay]]></displayName>
-    <version><![CDATA[2.5.0]]></version>
-    <description><![CDATA[Risparmia tempo e denaro ricevendo pagamenti dai tuoi clienti con Satispay. Semplice, veloce e sicura.]]></description>
+    <version><![CDATA[3.0.0]]></version>
+    <description><![CDATA[Risparmia tempo e denaro ricevendo pagamenti dai tuoi clienti con Satispay. Semplice, veloce e sicuro.]]></description>
     <author><![CDATA[Satispay]]></author>
     <tab><![CDATA[payments_gateways]]></tab>
     <is_configurable>1</is_configurable>
