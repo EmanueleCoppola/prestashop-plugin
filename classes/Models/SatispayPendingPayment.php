@@ -89,12 +89,18 @@ class SatispayPendingPayment extends ObjectModel
             ->from(self::$definition['table'])
             ->where("payment_id = '" . pSQL($payment_id) . "'");
 
-        $satispayPendingPayment = new self();
-        $satispayPendingPayment->hydrate(
-            Db::getInstance()->getRow($query)
-        );
+        $result = Db::getInstance()->getRow($query);
 
-        return $satispayPendingPayment;
+        if ($result) {
+            $satispayPendingPayment = new self();
+            $satispayPendingPayment->hydrate(
+                Db::getInstance()->getRow($query)
+            );
+
+            return $satispayPendingPayment;
+        }
+
+        return null;
     }
 
     /**
@@ -113,11 +119,17 @@ class SatispayPendingPayment extends ObjectModel
             ->from(self::$definition['table'])
             ->where('cart_id = ' . pSQL($cart_id));
         
-        $satispayPendingPayment = new self();
-        $satispayPendingPayment->hydrate(
-            Db::getInstance()->getRow($query)
-        );
+        $result = Db::getInstance()->getRow($query);
 
-        return $satispayPendingPayment;
+        if ($result) {
+            $satispayPendingPayment = new self();
+            $satispayPendingPayment->hydrate(
+                Db::getInstance()->getRow($query)
+            );
+
+            return $satispayPendingPayment;
+        }
+
+        return null;
     }
 }
