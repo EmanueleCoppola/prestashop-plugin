@@ -1,93 +1,99 @@
 <?php
-/**
-* 2007-2024 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author    PrestaShop SA <contact@prestashop.com>
-*  @copyright 2007-2024 PrestaShop SA
-*  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
+
+use SatispayGBusiness\Payment;
+use Satispay\Prestashop\Classes\Models\SatispayPendingPayment;
+
+/**
+ * Class SatispayPaymentModuleFrontController
+ *
+ * This front controller handles the Satispay payment process in PrestaShop.
+ * It initiates a payment request using Satispay's API, creates a payment record,
+ * and redirects the user to complete the payment.
+ *
+ * @property Satispay $module
+ */
 class SatispayPaymentModuleFrontController extends ModuleFrontController
 {
+    /**
+     * Handles the Satispay payment initiation.
+     *
+     * This method creates a payment request with Satispay, stores the transaction details,
+     * and redirects the user to complete the payment. In case of an error, it redirects the user to the cart page.
+     *
+     * @return void A redirect to the Satispay payment page
+     */
     public function postProcess()
     {
-        $cart = $this->context->cart;
+        $cart     = $this->context->cart;
         $currency = $this->context->currency;
+
         $amountUnit = round($cart->getOrderTotal(true, Cart::BOTH) * 100);
+        $reference = Order::generateReference();
 
-        //create order in Prestashop
-        $customer = new Customer($cart->id_customer);
-        $currency = new Currency($cart->id_currency);
-
-        //set custom order state for Satispay orders in "pending"
-        $this->module->validateOrder($cart->id, (int)(Configuration::get('SATISPAY_PENDING_STATE')), $amountUnit / 100, $this->module->displayName, null, array(
-            ), $currency->id, false, $customer->secure_key);
-
-        $orderId = Order::getOrderByCartId((int)($cart->id));
-        $order = new Order($orderId);
-
-        $redirectUrl = urldecode($this->context->link->getModuleLink(
-            $this->module->name,
-            'redirect',
-            array(),
-            true
-        ));
-
-        $callbackUrl = urldecode($this->context->link->getModuleLink(
-            $this->module->name,
-            'callback',
-            array(
-                'payment_id' => '{uuid}',
-            ),
-            true
-        ));
-
-        $payment = \SatispayGBusiness\Payment::create(array(
-            'flow' => 'MATCH_CODE',
-            'amount_unit' => $amountUnit,
-            'currency' => $currency->iso_code,
-            'callback_url' => $callbackUrl,
-            'external_code' => $order->reference,
-            'redirect_url' => $redirectUrl,
-            'metadata' => array(
+        $satispayPendingPayment = new SatispayPendingPayment();
+        $satispayPendingPayment
+            ->hydrate([
                 'cart_id' => $cart->id,
-            )
-        ));
+                'reference' => $reference,
+                'amount_unit' => $amountUnit
+            ]);
+        $satispayPendingPayment->save();
 
-        if (!empty($order->id)) {
-            $orderPaymentCollection = $order->getOrderPaymentCollection();
-            $orderPayment = $orderPaymentCollection[0];
-            $orderPayment->transaction_id = $payment->id;
-            //check if the payment amount contains over 9 decimals
-            if(strpos($orderPayment->amount, '.') !== false){
-                $number = explode(".", $orderPayment->amount);
-                $nDecimals = strlen($number[1]);
-                if ($nDecimals > 9) {
-                    $orderPayment->amount = $number[0] . '.' . substr($number[1], 0, 9);
-                }
-            }
-            $orderPayment->update();
+        try {
+            $payment = Payment::create([
+                'flow' => 'MATCH_CODE',
+                'amount_unit' => $amountUnit,
+                'currency' => $currency->iso_code,
+                'callback_url' => urldecode(
+                    $this->context->link->getModuleLink(
+                        $this->module->name,
+                        'callback',
+                        [
+                            'payment_id' => '{uuid}',
+                        ]
+                    )
+                ),
+                'external_code' => $reference,
+                'redirect_url' => urldecode(
+                    $this->context->link->getModuleLink(
+                        $this->module->name,
+                        'redirect',
+                        [
+                            // spp => SatispayPendingPayment
+                            'spp' => base64_encode($satispayPendingPayment->id)
+                        ]
+                    )
+                ),
+                'metadata' => [
+                    'cart_id' => $cart->id,
+                ]
+            ]);
+
+            $satispayPendingPayment
+                ->hydrate([
+                    'payment_id' => $payment->id
+                ]);
+            $satispayPendingPayment->save();
+
+            return Tools::redirect($payment->redirect_url);
+        } catch (Exception $e) {
+            $satispayPendingPayment->delete();
+
+            $this->module->log(
+                get_class($this) . "@postProcess error while creating the payment \"{$e->getMessage()}\"",
+                PrestaShopLogger::LOG_SEVERITY_LEVEL_ERROR
+            );
         }
 
-        Tools::redirect($payment->redirect_url);
+        $this->errors[] = $this->module->l('An error occurred while paying with Satispay. Please try again later.'); 
+
+        return
+            $this->redirectWithNotifications(
+                $this->context->link->getPageLink('cart', true, $this->context->language->id)
+            );
     }
 }
