@@ -1,106 +1,231 @@
 <?php
-/**
-* 2007-2024 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author    PrestaShop SA <contact@prestashop.com>
-*  @copyright 2007-2024 PrestaShop SA
-*  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+use Satispay\Prestashop\Classes\Lock\Lock;
+use Satispay\Prestashop\Classes\Models\SatispayPendingPayment;
+use SatispayGBusiness\Payment;
+
+/**
+ * Class SatispayRedirectModuleFrontController
+ *
+ * @property Satispay $module
+ */
 class SatispayRedirectModuleFrontController extends ModuleFrontController
 {
+    /**
+     * Processes the Satispay payment response.
+     *
+     * This method retrieves the pending payment information, checks the payment status from Satispay,
+     * and processes the payment accordingly. It may redirect the user to the order confirmation page,
+     * or back to the cart if the payment is canceled or invalid.
+     *
+     * @return void
+     */
     public function postProcess()
     {
-        //retrieve transaction id of last order by customer context
-        $currentCustomerId = $this->context->customer->id;
-        $customerOrders = Order::getCustomerOrders($currentCustomerId);
-        $paymentId = null;
-        if ($customerOrders) {
-            $lastOrder = new Order((int) $customerOrders[0]['id_order']);
-            if (_PS_VERSION_ >= '8') {
-                $orderPayments = $lastOrder->getOrderPayments();
-            } else {
-                $orderPayments = OrderPayment::getByOrderId($lastOrder->id);
-            }
-            $paymentId = $orderPayments[0]->transaction_id;
-        }
-        if (empty($paymentId)) {
-            // can't collect order/transaction_id from customer context, payment is still valid and no need to restore cart
-            $orderLink = $this->context->link->getPageLink('order', true, null);
-            Tools::redirect($orderLink);
+        $spp = Tools::getValue('spp', null);
+
+        if ($spp) {
+            $spp = (int) base64_decode($spp);
         }
 
-        $payment = \SatispayGBusiness\Payment::get($paymentId);
+        $satispayPendingPayment = new SatispayPendingPayment($spp);
 
-        if ($payment->status === 'ACCEPTED') {
-            for ($i = 0; $i < 6; $i++) {
-                $orderId = Order::getOrderByCartId($payment->metadata->cart_id);
-                $order = new Order($orderId);
+        if (!$satispayPendingPayment->id) {
+            return $this->redirectToCart();
+        }
 
-                if (!empty($order->id)) {
-                    $customer = new Customer($order->id_customer);
+        $lock = new Lock($satispayPendingPayment->payment_id);
 
-                    $confirmationLink = $this->context->link->getPageLink('order-confirmation', true, null, array(
-                        'id_cart' => $payment->metadata->cart_id,
-                        'id_order' => $order->id,
-                        'id_module' => $this->module->id,
-                        'key' => $customer->secure_key
-                    ));
+        return
+            $lock->block(
+                5,
+                function() use ($satispayPendingPayment) {
+                    $order = Order::getByCartId($satispayPendingPayment->cart_id);
 
-                    Tools::redirect($confirmationLink);
-                } else {
-                    sleep(2);
+                    // stop if we already have an order with this payment
+                    // this means that the order was successful
+                    if ($order) {
+                        return
+                            $this->redirectToConfirmation(
+                                $satispayPendingPayment->cart_id,
+                                $order->id,
+                                $order->getCustomer()->secure_key
+                            );
+                    }
+
+                    try {
+                        $satispayPayment = Payment::get($satispayPendingPayment->payment_id);
+
+                        if ($satispayPayment->status === 'ACCEPTED') {
+                            $order = $this->acceptOrder(
+                                $satispayPendingPayment,
+                                $satispayPayment
+                            );
+
+                            if ($order) {
+                                return
+                                    $this->redirectToConfirmation(
+                                        $satispayPendingPayment->cart_id,
+                                        $order->id,
+                                        $order->getCustomer()->secure_key
+                                    );
+                            }
+                        } else if ($satispayPayment->status === 'PENDING') {
+                            try {
+                                // try to cancel the payment
+                                try {
+                                    $cancel = Payment::update($satispayPendingPayment->payment_id, ['action' => 'CANCEL']);
+
+                                    if ($cancel->status === 'CANCELED') {
+                                        return $this->redirectToCart();
+                                    }
+                                } catch (Exception) {
+                                    $satispayPayment = Payment::get($satispayPendingPayment->payment_id);
+
+                                    if ($satispayPayment->status === 'ACCEPTED') {
+                                        $order = $this->acceptOrder(
+                                            $satispayPendingPayment,
+                                            $satispayPayment
+                                        );
+
+                                        if ($order) {
+                                            return
+                                                $this->redirectToConfirmation(
+                                                    $satispayPendingPayment->cart_id,
+                                                    $order->id,
+                                                    $order->getCustomer()->secure_key
+                                                );
+                                        }
+                                    }
+                                }
+                            } catch (Exception) {
+                                // here we can use silent catch as in this case
+                                // everything will be handled by the default return
+                            }
+                        } else if ($satispayPayment->status === 'CANCELED') {
+                            $satispayPendingPayment = SatispayPendingPayment::getByPaymentId($satispayPendingPayment->payment_id);
+
+                            if ($satispayPendingPayment) {
+                                $satispayPendingPayment->delete();
+                            }
+                        }
+                    } catch (Exception $e) {
+                        $this->module->log(
+                            get_class($this) . "@postProcess error while processing the redirect {$e->getMessage()}",
+                            PrestaShopLogger::LOG_SEVERITY_LEVEL_ERROR
+                        );
+                    }
+
+                    return $this->redirectToCart();
                 }
-            }
+            );
+    }
 
-            $historyLink = $this->context->link->getPageLink('history', true, null);
-            Tools::redirect($historyLink);
-        } else {
-            $oldCart = new Cart($payment->metadata->cart_id);
-            $duplication = $oldCart->duplicate();
-            if (!$duplication || !Validate::isLoadedObject($duplication['cart'])) {
-                $this->errors[] = Tools::displayError($this->l('Sorry. We cannot renew your order.'));
-            } elseif (!$duplication['success']) {
-                $this->errors[] = Tools::displayError($this->l('Some items are no longer available, and we are unable to renew your order.'));
-            } else {
-                $this->context->cookie->id_cart = $duplication['cart']->id;
-                $context = $this->context;
-                $context->cart = $duplication['cart'];
-                CartRule::autoAddToCart($context);
-                $this->context->cookie->write();
-            }
+    /**
+     * Accepts and validates the Satispay payment and creates an order.
+     *
+     * This method verifies the payment details against the cart, validates the order, and updates 
+     * the PrestaShop system with the new order information. If successful, it deletes the pending
+     * payment record and returns the created Order object.
+     *
+     * @param SatispayPendingPayment $satispayPendingPayment The pending Satispay payment details.
+     * @param stdClass $satispayPayment The Satispay payment information.
+     *
+     * @return Order|void Returns the created Order object or void if validation fails.
+     */
+    public function acceptOrder($satispayPendingPayment, $satispayPayment)
+    {
+        $cart = new Cart((int) $satispayPendingPayment->cart_id);
+        $cartAmountUnit = (int) round($cart->getOrderTotal(true, Cart::BOTH) * 100);
 
-            $orderId = Order::getOrderByCartId($payment->metadata->cart_id);
-            $order = new Order($orderId);
-            $order->setCurrentState((int)(Configuration::get('PS_OS_CANCELED')));
-            $order->save();
+        $customer = new Customer((int) $cart->id_customer);
 
-            \SatispayGBusiness\Payment::update($payment->id, array(
-                'action' => 'CANCEL'
-            ));
+        // stop if we don't have a cart and a customer associated
+        if (!($cart && $customer)) return;
 
-            $orderLink = $this->context->link->getPageLink('order', true, null);
-            Tools::redirect($orderLink);
+        // stop if the amount unit paid is different from the one in the cart
+        if (
+            !(
+                $satispayPayment->amount_unit === $cartAmountUnit &&
+                $cartAmountUnit === $satispayPendingPayment->amount_unit
+            )
+        ) return;
+
+        $validated = $this->module->validateOrder(
+            $cart->id,
+            (int) Configuration::get('PS_OS_PAYMENT'),
+            $satispayPendingPayment->amount_unit / 100,
+            $this->module->displayName,
+            null,
+            [
+                'transaction_id' => $satispayPendingPayment->payment_id
+            ],
+            $cart->id_currency,
+            false,
+            $customer->secure_key,
+            null,
+            $satispayPendingPayment->reference
+        );
+
+        if ($validated) {
+            $satispayPendingPayment->delete();
+
+            return Order::getByCartId($cart->id);
         }
+    }
+
+    /**
+     * Redirects the user back to the cart page.
+     *
+     * This method redirects the user to the cart in case the payment process needs
+     * to be canceled or when the user decides to modify their cart before completing the order.
+     *
+     * @return void
+     */
+    public function redirectToCart()
+    {
+        return
+            Tools::redirect(
+                $this->context->link->getPageLink(
+                    'order',
+                    true,
+                    $this->context->language->id
+                )
+            );
+    }
+
+    /**
+     * Redirects the user to the order confirmation page.
+     *
+     * This method redirects the user to the order confirmation page after a successful payment.
+     * It passes the necessary details, such as the cart ID, order ID, module ID, and customer key, 
+     * to display the appropriate order summary.
+     *
+     * @param int $cartId The ID of the cart for which the order was placed.
+     * @param int $orderId The ID of the created order.
+     * @param string $key The customer's secure key to ensure proper access.
+     *
+     * @return void
+     */
+    public function redirectToConfirmation($cartId, $orderId, $key)
+    {
+        return
+            Tools::redirect(
+                $this->context->link->getPageLink(
+                    'order-confirmation',
+                    true,
+                    $this->context->language->id,
+                    [
+                        'id_cart' => $cartId,
+                        'id_order' => $orderId,
+                        'id_module' => $this->module->id,
+                        'key' => $key
+                    ]
+                )
+            );
     }
 }
