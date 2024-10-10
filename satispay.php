@@ -68,7 +68,7 @@ class Satispay extends PaymentModule
     {
         $this->name = 'satispay';
         $this->tab = 'payments_gateways';
-        $this->version = '2.5.0';
+        $this->version = '3.0.0';
         $this->author = 'Satispay';
         $this->need_instance = 1;
         $this->module_key = '812ed8ea2509dd2146ef979a6af24ee5';
@@ -77,7 +77,7 @@ class Satispay extends PaymentModule
         parent::__construct();
 
         $this->displayName = $this->l('Satispay');
-        $this->description = $this->l('Save time and money by accepting payments from your customers with Satispay. Free, simple, secure! #doitsmart');
+        $this->description = $this->l('Save time and money by accepting payments from your customers with Satispay. Simple, fast and secure!');
         
         $this->ps_versions_compliancy = [
             'min' => '1.7',
