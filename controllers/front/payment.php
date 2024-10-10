@@ -31,7 +31,15 @@ class SatispayPaymentModuleFrontController extends ModuleFrontController
         $cart     = $this->context->cart;
         $currency = $this->context->currency;
 
-        $amountUnit = round($cart->getOrderTotal(true, Cart::BOTH) * 100);
+        $amountUnit            = (int) round($cart->getOrderTotal(true, Cart::BOTH) * 100);
+        $mealVoucherAmountUnit = (int) Hook::exec(
+            Satispay::SATISPAY_MEAL_VOUCHER_AMOUNT_HOOK,
+            [
+                'cart' => $cart,
+                'amount' => $amountUnit
+            ]
+        );
+
         $reference = Order::generateReference();
 
         $satispayPendingPayment = new SatispayPendingPayment();
@@ -46,8 +54,13 @@ class SatispayPaymentModuleFrontController extends ModuleFrontController
         try {
             $payment = Payment::create([
                 'flow' => 'MATCH_CODE',
-                'amount_unit' => $amountUnit,
                 'currency' => $currency->iso_code,
+                'amount_unit' => $amountUnit,
+                'payment_method_options' => [
+                    'meal_voucher' => [
+                        'max_amount_unit' => $mealVoucherAmountUnit
+                    ]
+                ],
                 'callback_url' => urldecode(
                     $this->context->link->getModuleLink(
                         $this->module->name,

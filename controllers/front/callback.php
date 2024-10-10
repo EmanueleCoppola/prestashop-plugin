@@ -1,56 +1,96 @@
 <?php
-/**
-* 2007-2024 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author    PrestaShop SA <contact@prestashop.com>
-*  @copyright 2007-2024 PrestaShop SA
-*  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+use Satispay\Prestashop\Classes\Lock\Lock;
+use Satispay\Prestashop\Classes\Models\SatispayPendingPayment;
+use SatispayGBusiness\Payment;
+
+/**
+ * Class SatispayCallbackModuleFrontController.
+ *
+ * @property Satispay $module
+ */
 class SatispayCallbackModuleFrontController extends ModuleFrontController
 {
     public function postProcess()
     {
         $paymentId = Tools::getValue('payment_id');
-        $payment = \SatispayGBusiness\Payment::get($paymentId);
-        $orderId = Order::getOrderByCartId($payment->metadata->cart_id);
-        $order = new Order($orderId);
 
-        if ($order->current_state == (int)(Configuration::get('SATISPAY_PENDING_STATE'))) {
-            $history = new OrderHistory();
-            $history->id_order = (int)$orderId;
+        $lock = new Lock($paymentId);
 
-            if ($payment->status === 'ACCEPTED') {
-                //using existing payment so it's not doubled
-                $history->changeIdOrderState((int)(Configuration::get('PS_OS_PAYMENT')), $orderId, true);
-                $history->save();
+        $lock->block(
+            5,
+            function() use ($paymentId) {
+                try {
+                    $satispayPendingPayment = SatispayPendingPayment::getByPaymentId($paymentId);
+
+                    // stop if we don't have any pending payment with that id
+                    if (!$satispayPendingPayment) return;
+
+                    $order = Order::getByCartId($satispayPendingPayment->cart_id);
+
+                    // stop if we already have an order with this payment
+                    if ($order) return;
+
+                    $satispayPayment = Payment::get($paymentId);
+
+                    if ($satispayPayment->status === 'ACCEPTED') {
+                        $cart = new Cart((int) $satispayPendingPayment->cart_id);
+                        $cartAmountUnit = (int) round($cart->getOrderTotal(true, Cart::BOTH) * 100);
+
+                        $customer = new Customer((int) $cart->id_customer);
+
+                        // stop if we don't have a cart and a customer associated
+                        if (!($cart && $customer)) return;
+
+                        // stop if the amount unit paid is different from the one in the cart
+                        if (
+                            !(
+                                $satispayPayment->amount_unit === $cartAmountUnit &&
+                                $cartAmountUnit === $satispayPendingPayment->amount_unit
+                            )
+                        ) return;
+
+                        $validated = $this->module->validateOrder(
+                            $cart->id,
+                            (int) Configuration::get('PS_OS_PAYMENT'),
+                            $satispayPendingPayment->amount_unit / 100,
+                            $this->module->displayName,
+                            null,
+                            [
+                                'transaction_id' => $satispayPendingPayment->payment_id
+                            ],
+                            $cart->id_currency,
+                            false,
+                            $customer->secure_key,
+                            null,
+                            $satispayPendingPayment->reference
+                        );
+
+                        if ($validated) {
+                            $satispayPendingPayment->delete();
+                        }
+                    } else if ($satispayPayment->status === 'CANCELED') {
+                        $satispayPendingPayment = SatispayPendingPayment::getByPaymentId($paymentId);
+
+                        if ($satispayPendingPayment) {
+                            $satispayPendingPayment->delete();
+                        }
+                    }
+                } catch (Exception $e) {
+                    $this->module->log(
+                        get_class($this) . "@postProcess error while processing the callback {$e->getMessage()}",
+                        PrestaShopLogger::LOG_SEVERITY_LEVEL_ERROR
+                    );
+                }
             }
+        );
 
-            if ($payment->status === 'CANCELED') {
-                $order->setCurrentState((int)(Configuration::get('PS_OS_CANCELED')));
-                $order->save();
-            }
-        }
-        exit;
+        header('HTTP/1.1 204 No Content');
+
+        return;
     }
 }

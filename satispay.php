@@ -51,6 +51,9 @@ class Satispay extends PaymentModule
     // TODO: implement the payment duration
     const SATISPAY_PAYMENT_DURATION_MINUTES = 'SATISPAY_PAYMENT_DURATION_MINUTES';
 
+    // custom hooks
+    const SATISPAY_MEAL_VOUCHER_AMOUNT_HOOK = 'actionSatispayMealVoucherAmount';
+
     /**
      * The CallbackHealthCheck instance.
      * 
@@ -127,9 +130,9 @@ class Satispay extends PaymentModule
     {
         return parent::install() && 
             $this->installDb() &&
-            $this->registerHook('payment') && 
             $this->registerHook('paymentOptions') &&
-            $this->registerHook('actionAdminControllerSetMedia');
+            $this->registerHook('actionAdminControllerSetMedia') &&
+            $this->registerHook(self::SATISPAY_MEAL_VOUCHER_AMOUNT_HOOK);
     }
 
     /**
@@ -140,12 +143,12 @@ class Satispay extends PaymentModule
     public function installDb()
     {
         $queries = [
-            "CREATE TABLE IF NOT EXISTS `" . _DB_PREFIX_ . "satispay_payments` (
+            "CREATE TABLE IF NOT EXISTS `" . _DB_PREFIX_ . "satispay_pending_payments` (
               `id` INT(11) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
               `cart_id` INT(11),
               `payment_id` VARCHAR(255),
               `reference` VARCHAR(255),
-              `amount` INT(11) UNSIGNED,
+              `amount_unit` INT(11) UNSIGNED,
               `date_add` DATETIME,
               `date_upd` DATETIME
             ) ENGINE = " . _MYSQL_ENGINE_,
@@ -276,6 +279,7 @@ class Satispay extends PaymentModule
         // if the module is not properly configured
         // we avoid querying for currency infos
         if (
+            !$this->active ||
             !(
                 Configuration::get(self::SATISPAY_ACTIVATION_CODE) &&
                 Configuration::get(self::SATISPAY_PRIVATE_KEY) &&
@@ -319,6 +323,24 @@ class Satispay extends PaymentModule
             $controller->addJs($this->getPathUri() . "views/admin/js/{$this->name}.js");
             $controller->addCSS($this->getPathUri() . "views/admin/css/{$this->name}.css");
         }
+    }
+
+    /**
+     * Hook that allows to limit the Satispay Meal Voucher amount on a specific cart.
+     * Just return the Satispay Meal Voucher max amount in cents.
+     * You can filter the cart for food products using your criteria.
+     *
+     * @param array $params
+     *
+     * @return int Satispay Meal Voucher max amount.
+     */
+    public function hookActionSatispayMealVoucherAmount($params)
+    {
+        // available params
+        // $cart = $params['cart'];
+        // $amount = $params['amount'];
+
+        return $params['amount'];
     }
 
     /**
