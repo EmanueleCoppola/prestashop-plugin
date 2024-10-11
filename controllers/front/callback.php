@@ -15,6 +15,16 @@ use SatispayGBusiness\Payment;
  */
 class SatispayCallbackModuleFrontController extends ModuleFrontController
 {
+    /**
+     * Process the incoming Satispay callback request.
+     *
+     * This method retrieves the payment ID from the request, attempts to lock the payment
+     * to prevent race conditions, and handles the payment processing logic. Depending on
+     * the Satispay payment status, it either creates a new order, cancels the payment, or
+     * deletes the pending payment record.
+     *
+     * @return void
+     */
     public function postProcess()
     {
         $paymentId = Tools::getValue('payment_id');
@@ -28,57 +38,39 @@ class SatispayCallbackModuleFrontController extends ModuleFrontController
                     $satispayPendingPayment = SatispayPendingPayment::getByPaymentId($paymentId);
 
                     // stop if we don't have any pending payment with that id
-                    if (!$satispayPendingPayment) return;
+                    if (!Validate::isLoadedObject($satispayPendingPayment)) return;
 
                     $order = Order::getByCartId($satispayPendingPayment->cart_id);
 
                     // stop if we already have an order with this payment
-                    if ($order) return;
+                    if (Validate::isLoadedObject($order)) {
+                        $satispayPendingPayment->delete();
+
+                        return;
+                    };
 
                     $satispayPayment = Payment::get($paymentId);
 
                     if ($satispayPayment->status === 'ACCEPTED') {
-                        $cart = new Cart((int) $satispayPendingPayment->cart_id);
-                        $cartAmountUnit = (int) round($cart->getOrderTotal(true, Cart::BOTH) * 100);
-
-                        $customer = new Customer((int) $cart->id_customer);
-
-                        // stop if we don't have a cart and a customer associated
-                        if (!($cart && $customer)) return;
-
-                        // stop if the amount unit paid is different from the one in the cart
-                        if (
-                            !(
-                                $satispayPayment->amount_unit === $cartAmountUnit &&
-                                $cartAmountUnit === $satispayPendingPayment->amount_unit
-                            )
-                        ) return;
-
-                        $validated = $this->module->validateOrder(
-                            $cart->id,
-                            (int) Configuration::get('PS_OS_PAYMENT'),
-                            $satispayPendingPayment->amount_unit / 100,
-                            $this->module->displayName,
-                            null,
-                            [
-                                'transaction_id' => $satispayPendingPayment->payment_id
-                            ],
-                            $cart->id_currency,
-                            false,
-                            $customer->secure_key,
-                            null,
-                            $satispayPendingPayment->reference
+                        $order = $satispayPendingPayment->acceptOrder(
+                            $satispayPayment->amount_unit,
+                            $this->module
                         );
 
-                        if ($validated) {
-                            $satispayPendingPayment->delete();
+                        if (!Validate::isLoadedObject($order)) {
+                            try {
+                                $cancelOrRefund = Payment::update($paymentId, ['action' => 'CANCEL_OR_REFUND']);
+
+                                if (
+                                    $cancelOrRefund->status === 'CANCELED' ||
+                                    $cancelOrRefund->status === 'ACCEPTED'
+                                ) {
+                                    $satispayPendingPayment->delete();
+                                }
+                            } catch (Exception) {}
                         }
                     } else if ($satispayPayment->status === 'CANCELED') {
-                        $satispayPendingPayment = SatispayPendingPayment::getByPaymentId($paymentId);
-
-                        if ($satispayPendingPayment) {
-                            $satispayPendingPayment->delete();
-                        }
+                        $satispayPendingPayment->delete();
                     }
                 } catch (Exception $e) {
                     $this->module->log(
