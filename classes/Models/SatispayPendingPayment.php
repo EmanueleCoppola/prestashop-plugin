@@ -7,9 +7,16 @@ if (!defined('_PS_VERSION_')) {
 }
 
 // Prestashop
+
+use Cart;
+use Configuration;
+use Customer;
 use \Db;
 use \DbQuery;
 use \ObjectModel;
+use Order;
+use SatispayGBusiness\Payment;
+use Validate;
 
 /**
  * Class SatispayPendingPayment.
@@ -131,5 +138,62 @@ class SatispayPendingPayment extends ObjectModel
         }
 
         return null;
+    }
+
+    /**
+     * Accepts and validates the Satispay payment and creates an order.
+     *
+     * This method verifies the payment details against the cart, validates the order, and updates 
+     * the PrestaShop system with the new order information. If successful, it deletes the pending
+     * payment record and returns the created Order object.
+     *
+     * @param int $amountUnit The Satispay payment amount_unit.
+     * @param Satispay $module The Satispay payment module.
+     *
+     * @return Order|void Returns the created Order object or void if validation fails.
+     */
+    public function acceptOrder($amountUnit, $module)
+    {
+        $amountUnit = (int) $amountUnit;
+
+        $cart = new Cart((int) $this->cart_id);
+        $cartAmountUnit = (int) round($cart->getOrderTotal(true, Cart::BOTH) * 100);
+
+        $customer = new Customer((int) $cart->id_customer);
+
+        if (
+            // stop if we don't have a cart and a customer associated
+            !(Validate::isLoadedObject($cart) && Validate::isLoadedObject($customer)) ||
+
+            // stop if the amount unit paid is different from the one in the cart
+            !(
+                $amountUnit === $cartAmountUnit &&
+                $cartAmountUnit === $this->amount_unit
+            )
+        ) {
+            return;
+        }
+
+        $validated = $module->validateOrder(
+            (int) $cart->id,
+            (int) Configuration::get('PS_OS_PAYMENT'),
+            $this->amount_unit / 100,
+            $module->displayName,
+            null,
+            [
+                'transaction_id' => $this->payment_id
+            ],
+            (int) $cart->id_currency,
+            false,
+            $customer->secure_key,
+            null,
+            $this->reference
+        );
+
+        if ($validated) {
+            $this->delete();
+
+            return Order::getByCartId($cart->id);
+        }
     }
 }
