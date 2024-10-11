@@ -48,7 +48,7 @@ class SatispayRedirectModuleFrontController extends ModuleFrontController
 
                     // stop if we already have an order with this payment
                     // this means that the order was successful
-                    if ($order) {
+                    if (Validate::isLoadedObject($order)) {
                         return
                             $this->redirectToConfirmation(
                                 $satispayPendingPayment->cart_id,
@@ -61,18 +61,36 @@ class SatispayRedirectModuleFrontController extends ModuleFrontController
                         $satispayPayment = Payment::get($satispayPendingPayment->payment_id);
 
                         if ($satispayPayment->status === 'ACCEPTED') {
-                            $order = $this->acceptOrder(
-                                $satispayPendingPayment,
-                                $satispayPayment
+                            $order = $satispayPendingPayment->acceptOrder(
+                                $satispayPayment->amount_unit,
+                                $this->module
                             );
 
-                            if ($order) {
+                            if (Validate::isLoadedObject($order)) {
                                 return
                                     $this->redirectToConfirmation(
                                         $satispayPendingPayment->cart_id,
                                         $order->id,
                                         $order->getCustomer()->secure_key
                                     );
+                            } else {
+                                try {
+                                    $cancelOrRefund = Payment::update(
+                                        $satispayPendingPayment->payment_id,
+                                        [
+                                            'action' => 'CANCEL_OR_REFUND'
+                                        ]
+                                    );
+    
+                                    if (
+                                        $cancelOrRefund->status === 'CANCELED' ||
+                                        $cancelOrRefund->status === 'ACCEPTED'
+                                    ) {
+                                        $satispayPendingPayment->delete();
+                                    }
+                                } catch (Exception) {
+                                    // this can be silent
+                                }
                             }
                         } else if ($satispayPayment->status === 'PENDING') {
                             try {
@@ -87,18 +105,31 @@ class SatispayRedirectModuleFrontController extends ModuleFrontController
                                     $satispayPayment = Payment::get($satispayPendingPayment->payment_id);
 
                                     if ($satispayPayment->status === 'ACCEPTED') {
-                                        $order = $this->acceptOrder(
-                                            $satispayPendingPayment,
-                                            $satispayPayment
+                                        $order = $satispayPendingPayment->acceptOrder(
+                                            $satispayPayment->amount_unit,
+                                            $this->module
                                         );
 
-                                        if ($order) {
+                                        if (Validate::isLoadedObject($order)) {
                                             return
                                                 $this->redirectToConfirmation(
                                                     $satispayPendingPayment->cart_id,
                                                     $order->id,
                                                     $order->getCustomer()->secure_key
                                                 );
+                                        } else {
+                                            try {
+                                                $cancelOrRefund = Payment::update($satispayPendingPayment->payment_id, ['action' => 'CANCEL_OR_REFUND']);
+                
+                                                if (
+                                                    $cancelOrRefund->status === 'CANCELED' ||
+                                                    $cancelOrRefund->status === 'ACCEPTED'
+                                                ) {
+                                                    $satispayPendingPayment->delete();
+                                                }
+                                            } catch (Exception) {
+                                                // this can be silent
+                                            }
                                         }
                                     }
                                 }
@@ -107,11 +138,7 @@ class SatispayRedirectModuleFrontController extends ModuleFrontController
                                 // everything will be handled by the default return
                             }
                         } else if ($satispayPayment->status === 'CANCELED') {
-                            $satispayPendingPayment = SatispayPendingPayment::getByPaymentId($satispayPendingPayment->payment_id);
-
-                            if ($satispayPendingPayment) {
-                                $satispayPendingPayment->delete();
-                            }
+                            $satispayPendingPayment->delete();
                         }
                     } catch (Exception $e) {
                         $this->module->log(
@@ -123,59 +150,6 @@ class SatispayRedirectModuleFrontController extends ModuleFrontController
                     return $this->redirectToCart();
                 }
             );
-    }
-
-    /**
-     * Accepts and validates the Satispay payment and creates an order.
-     *
-     * This method verifies the payment details against the cart, validates the order, and updates 
-     * the PrestaShop system with the new order information. If successful, it deletes the pending
-     * payment record and returns the created Order object.
-     *
-     * @param SatispayPendingPayment $satispayPendingPayment The pending Satispay payment details.
-     * @param stdClass $satispayPayment The Satispay payment information.
-     *
-     * @return Order|void Returns the created Order object or void if validation fails.
-     */
-    public function acceptOrder($satispayPendingPayment, $satispayPayment)
-    {
-        $cart = new Cart((int) $satispayPendingPayment->cart_id);
-        $cartAmountUnit = (int) round($cart->getOrderTotal(true, Cart::BOTH) * 100);
-
-        $customer = new Customer((int) $cart->id_customer);
-
-        // stop if we don't have a cart and a customer associated
-        if (!($cart && $customer)) return;
-
-        // stop if the amount unit paid is different from the one in the cart
-        if (
-            !(
-                $satispayPayment->amount_unit === $cartAmountUnit &&
-                $cartAmountUnit === $satispayPendingPayment->amount_unit
-            )
-        ) return;
-
-        $validated = $this->module->validateOrder(
-            $cart->id,
-            (int) Configuration::get('PS_OS_PAYMENT'),
-            $satispayPendingPayment->amount_unit / 100,
-            $this->module->displayName,
-            null,
-            [
-                'transaction_id' => $satispayPendingPayment->payment_id
-            ],
-            $cart->id_currency,
-            false,
-            $customer->secure_key,
-            null,
-            $satispayPendingPayment->reference
-        );
-
-        if ($validated) {
-            $satispayPendingPayment->delete();
-
-            return Order::getByCartId($cart->id);
-        }
     }
 
     /**
