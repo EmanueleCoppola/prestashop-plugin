@@ -7,16 +7,14 @@ if (!defined('_PS_VERSION_')) {
 }
 
 // Prestashop
-
-use Cart;
-use Configuration;
-use Customer;
+use \Cart;
+use \Configuration;
+use \Customer;
 use \Db;
 use \DbQuery;
 use \ObjectModel;
-use Order;
-use SatispayGBusiness\Payment;
-use Validate;
+use \Order;
+use \Validate;
 
 /**
  * Class SatispayPendingPayment.

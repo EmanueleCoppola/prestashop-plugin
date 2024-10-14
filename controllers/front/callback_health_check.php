@@ -4,7 +4,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-use Satispay;
+use \Satispay;
 
 /**
  * Class SatispayCallback_Health_CheckModuleFrontController
