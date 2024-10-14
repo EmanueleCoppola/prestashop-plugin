@@ -100,9 +100,7 @@ class SatispayPendingPayment extends ObjectModel
 
         if ($result) {
             $satispayPendingPayment = new self();
-            $satispayPendingPayment->hydrate(
-                Db::getInstance()->getRow($query)
-            );
+            $satispayPendingPayment->hydrate($result);
 
             return $satispayPendingPayment;
         }
@@ -130,9 +128,7 @@ class SatispayPendingPayment extends ObjectModel
 
         if ($result) {
             $satispayPendingPayment = new self();
-            $satispayPendingPayment->hydrate(
-                Db::getInstance()->getRow($query)
-            );
+            $satispayPendingPayment->hydrate($result);
 
             return $satispayPendingPayment;
         }
