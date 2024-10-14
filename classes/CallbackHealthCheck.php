@@ -37,6 +37,7 @@ class CallbackHealthCheck
      * @var string
      */
     const PAYMENT_DURATION_SECONDS = 60;
+    const PAYMENT_TIMEOUT_DURATION_SECONDS = 10; // 10 more seconds are more than enough
 
     // statuses
     const STATUS_TODO = 'todo';
@@ -52,7 +53,7 @@ class CallbackHealthCheck
     protected $module;
 
     /**
-     * The Satispay module.
+     * The Satispay module context.
      *
      * @var Context
      */
@@ -151,8 +152,7 @@ class CallbackHealthCheck
         if (
             $timestamp
                 ->addSeconds(
-                    // 10 more seconds are more than enough
-                    self::PAYMENT_DURATION_SECONDS + 10
+                    self::PAYMENT_DURATION_SECONDS + self::PAYMENT_TIMEOUT_DURATION_SECONDS
                 )
                 ->lessThan(
                     Carbon::now()->timezone('UTC')
