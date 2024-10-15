@@ -11,7 +11,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-function upgrade_module_2_5_0($module) {
+function upgrade_module_3_0_0($module) {
     /** @var Satispay $module */
 
     // remove Satispay order state
