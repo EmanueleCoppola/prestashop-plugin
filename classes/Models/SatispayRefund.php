@@ -45,12 +45,12 @@ class SatispayRefund extends ObjectModel
      */
     public static $definition = [
         'table' => 'satispay_refunds',
-        'primary' => 'refund_id',
+        'primary' => 'id',
         'multilang' => false,
         'fields' => [
-            'refund_id' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedId'],
+            'refund_id' => ['type' => self::TYPE_STRING, 'validate' => 'isString'],
             'payment_id' => ['type' => self::TYPE_STRING, 'validate' => 'isString'],
-            'amount_unit' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedId'],
+            'amount_unit' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'],
             'date_add' => ['type' => self::TYPE_DATE, 'validate' => 'isDateFormat']
         ],
         'collation' => 'utf8_general_ci',
@@ -70,10 +70,21 @@ class SatispayRefund extends ObjectModel
         $query
             ->select('*')
             ->from(self::$definition['table'])
-            ->where("payment_id = '" . pSQL($payment_id) . "'");
+            ->where("payment_id = '" . pSQL($payment_id) . "'")
+            ->orderBy('date_add DESC');
 
         $results = Db::getInstance()->executeS($query);
 
         return ObjectModel::hydrateCollection(self::class, $results);
+    }
+
+    /**
+     * Get the amount in a Prestashop format.
+     * 
+     * @return float
+     */
+    public function getAmount()
+    {
+        return $this->amount_unit / 100;
     }
 }
