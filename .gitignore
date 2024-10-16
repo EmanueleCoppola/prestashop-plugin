@@ -1,5 +1,9 @@
+# OS
+.DS_Store
+
 # building
 tmp/
+satispay.zip
 
 # Composer
 vendor/
