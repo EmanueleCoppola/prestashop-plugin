@@ -102,7 +102,7 @@ class Satispay extends PaymentModule
      */
     public function bootSatispayClient()
     {
-        $sandbox = Configuration::get(Satispay::SATISPAY_SANDBOX, false);
+        $sandbox = (bool) Configuration::get(Satispay::SATISPAY_SANDBOX, false);
 
         $keyId = Configuration::get(Satispay::SATISPAY_KEY_ID);
         $privateKey = Configuration::get(Satispay::SATISPAY_PRIVATE_KEY);
