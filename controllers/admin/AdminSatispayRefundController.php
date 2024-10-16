@@ -117,7 +117,10 @@ class AdminSatispayRefundController extends ModuleAdminController
         } else if ($refundAmount > $refundableAmount) {
             $this->module->flash(
                 'refund-error-message',
-                $this->module->l('The maximum amount that you can refund for this payment is of ' . $this->formatPrice($refundableAmount))
+                sprintf(
+                    $this->module->l('The maximum amount that you can refund for this payment is of %s'),
+                    $this->formatPrice($refundableAmount)
+                )
             );
 
             return;
