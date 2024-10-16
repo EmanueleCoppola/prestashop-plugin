@@ -118,7 +118,9 @@ class ConfigForm extends Form
         if ($activationCode) {
             try {
                 Payment::all();
-            } catch (Exception) {
+            } catch (Exception $e) {
+                $this->module->log(get_class($this) . "@render exception {$e->getMessage()}", PrestaShopLogger::LOG_SEVERITY_LEVEL_ERROR);
+
                 $this->error = sprintf($this->l('Satispay is not correctly configured, get an Activation Code from Online Shop section on %sSatispay Dashboard%s.'), '<a href="https://dashboard.satispay.com/signup" target="_blank">', '</a>').'<br />';
             }
         }
