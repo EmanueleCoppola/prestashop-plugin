@@ -88,8 +88,11 @@ class SatispayRedirectModuleFrontController extends ModuleFrontController
                                     ) {
                                         $satispayPendingPayment->delete();
                                     }
-                                } catch (Exception) {
-                                    // this can be silent
+                                } catch (Exception $e) {
+                                    $this->module->log(
+                                        get_class($this) . "@postProcess error while executing CANCEL_OR_REFUND {$e->getMessage()}",
+                                        PrestaShopLogger::LOG_SEVERITY_LEVEL_ERROR
+                                    );
                                 }
                             }
                         } else if ($satispayPayment->status === 'PENDING') {
@@ -101,7 +104,12 @@ class SatispayRedirectModuleFrontController extends ModuleFrontController
                                     if ($cancel->status === 'CANCELED') {
                                         return $this->redirectToCart();
                                     }
-                                } catch (Exception) {
+                                } catch (Exception $e) {
+                                    $this->module->log(
+                                        get_class($this) . "@postProcess error while executing CANCEL {$e->getMessage()}",
+                                        PrestaShopLogger::LOG_SEVERITY_LEVEL_ERROR
+                                    );
+
                                     $satispayPayment = Payment::get($satispayPendingPayment->payment_id);
 
                                     if ($satispayPayment->status === 'ACCEPTED') {
@@ -127,8 +135,11 @@ class SatispayRedirectModuleFrontController extends ModuleFrontController
                                                 ) {
                                                     $satispayPendingPayment->delete();
                                                 }
-                                            } catch (Exception) {
-                                                // this can be silent
+                                            } catch (Exception $e) {
+                                                $this->module->log(
+                                                    get_class($this) . "@postProcess error while executing CANCEL_OR_REFUND {$e->getMessage()}",
+                                                    PrestaShopLogger::LOG_SEVERITY_LEVEL_ERROR
+                                                );
                                             }
                                         }
                                     }
