@@ -1,0 +1,59 @@
+
+.callback-status {}
+
+/* circle color handling and animation */
+.callback-status-circle {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: lightgrey;
+}
+
+.callback-status.todo .callback-status-circle {
+    background-color: orange;
+}
+
+.callback-status.pending .callback-status-circle {
+    animation: glow .5s infinite alternate;
+    cursor: wait;
+}
+
+.callback-status.success .callback-status-circle {
+    background-color: green;
+}
+
+.callback-status.fail .callback-status-circle {
+    background-color: red;
+}
+
+@keyframes glow {
+    0% {
+        background-color: orange;
+    }
+    100% {
+        background-color: grey;
+    }
+}
+
+/* side message */
+.callback-status-message {
+    display: none;
+    margin-left: 3px;
+}
+
+.callback-status.todo .callback-status-message.todo {
+    display: inline-block;
+}
+
+.callback-status.pending .callback-status-message.pending {
+    display: inline-block;
+}
+
+.callback-status.success .callback-status-message.success {
+    display: inline-block;
+}
+
+.callback-status.fail .callback-status-message.fail {
+    display: inline-block;
+}
