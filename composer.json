@@ -11,7 +11,7 @@
     "type": "prestashop-module",
     "require": {
         "php": ">=7.1",
-        "satispay/gbusiness-api-php-sdk": "^1.3",
+        "satispay/gbusiness-api-php-sdk": "^1.4",
         "nesbot/carbon": "^2"
     },
     "autoload": {
