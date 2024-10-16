@@ -71,7 +71,7 @@ class SatispayPendingPayment extends ObjectModel
             'cart_id' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedId'],
             'payment_id' => ['type' => self::TYPE_STRING, 'validate' => 'isString'],
             'reference' => ['type' => self::TYPE_STRING, 'validate' => 'isString'],
-            'amount_unit' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedId'],
+            'amount_unit' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'],
             'date_add' => ['type' => self::TYPE_DATE, 'validate' => 'isDateFormat'],
             'date_upd' => ['type' => self::TYPE_DATE, 'validate' => 'isDateFormat'],
         ],
