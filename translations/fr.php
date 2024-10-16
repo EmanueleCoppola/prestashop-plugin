@@ -37,3 +37,5 @@ $_MODULE['<{satispay}prestashop>adminordertab_14e753957448725d98f7fe03c2611fc1']
 $_MODULE['<{satispay}prestashop>adminordertab_9a49152f05f1c38bc892d4c3530c0d18'] = 'Date du remboursement';
 $_MODULE['<{satispay}prestashop>adminordertab_ea4ef81603749d8f4b0573ca2f926eb9'] = 'ID du remboursement';
 $_MODULE['<{satispay}prestashop>adminordertab_dd8366c780bd2ce22a842d6384fec8b2'] = 'Montant du remboursement';
+$_MODULE['<{satispay}prestashop>adminordertab_c8c87719c140f83eebcd73638035440a'] = 'Effectuer un remboursement';
+$_MODULE['<{satispay}prestashop>adminordertab_923b4f2fab158a29e248e4e3ab745439'] = 'Êtes-vous sûr de vouloir effectuer ce remboursement ?';

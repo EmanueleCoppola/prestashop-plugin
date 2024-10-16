@@ -49,7 +49,7 @@
                     <input type="hidden" name="satispay_refund_id_order" value="{$order->id}">
 
                     <div class="form-group row">
-                        <label class="col-sm-3 col-form-label">{l s='Refund Amount' mod='satispaypayments'}</label>
+                        <label class="col-sm-3 col-form-label">{l s='Refund amount' mod='satispay'}</label>
 
                         <div class="col-sm-9 d-flex">
                             <div class="flex-grow-1">
@@ -63,7 +63,7 @@
                             </div>
 
                             <button type="submit" class="btn btn-primary ml-2 flex-1" name="satispay_refund">
-                                {l s='Process Refund' mod='satispaypayments'}
+                                {l s='Process refund' mod='satispay'}
                             </button>
                         </div>
                     </div>
@@ -81,7 +81,7 @@
         document
             .getElementById('satispay-refund-form')
             .addEventListener('submit', function(e) {
-                if (!confirm('{/literal}{l s='Are you sure you want to process this refund?' mod='satispaypayments'}{literal}')) {
+                if (!confirm('{/literal}{l s='Are you sure you want to process this refund?' mod='satispay'}{literal}')) {
                     e.preventDefault();
                 }
             });
