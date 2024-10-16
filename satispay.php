@@ -13,6 +13,7 @@ use PrestaShop\PrestaShop\Core\Payment\PaymentOption;
 use SatispayGBusiness\Api;
 use Satispay\Prestashop\Classes\CallbackHealthCheck;
 use Satispay\Prestashop\Classes\Forms\ConfigForm;
+use Satispay\Prestashop\Classes\Models\SatispayRefund;
 
 class Satispay extends PaymentModule
 {
@@ -66,7 +67,8 @@ class Satispay extends PaymentModule
      */
     public function __construct()
     {
-        $this->name = 'satispay';
+        $this->name = 'satispay'; // do not change this ever
+
         $this->tab = 'payments_gateways';
         $this->version = '3.0.0';
         $this->author = 'Satispay';
@@ -132,7 +134,8 @@ class Satispay extends PaymentModule
             $this->installDb() &&
             $this->registerHook('paymentOptions') &&
             $this->registerHook('actionAdminControllerSetMedia') &&
-            $this->registerHook(self::SATISPAY_MEAL_VOUCHER_AMOUNT_HOOK);
+            $this->registerHook(self::SATISPAY_MEAL_VOUCHER_AMOUNT_HOOK) &&
+            $this->registerHook('displayAdminOrderMainBottom');
     }
 
     /**
@@ -151,12 +154,20 @@ class Satispay extends PaymentModule
               `amount_unit` INT(11) UNSIGNED,
               `date_add` DATETIME,
               `date_upd` DATETIME
-            ) ENGINE = " . _MYSQL_ENGINE_,
+            ) ENGINE = " . _MYSQL_ENGINE_ . "DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;",
             "CREATE TABLE IF NOT EXISTS `" . _DB_PREFIX_ . "satispay_locks` (
                 `name` VARCHAR(255) NOT NULL,
                 `expires_at` DATETIME(3) NOT NULL,
                 PRIMARY KEY (`name`)
-            ) ENGINE = " . _MYSQL_ENGINE_
+            ) ENGINE = " . _MYSQL_ENGINE_ . "DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;",
+            "CREATE TABLE IF NOT EXISTS `" . _DB_PREFIX_ . "satispay_refunds` (
+                `id` INT(11) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                `refund_id` VARCHAR(255) NOT NULL,
+                `payment_id` VARCHAR(255) NOT NULL,
+                `amount_unit` INT(11) UNSIGNED,
+                `date_add` DATETIME,
+                INDEX (`payment_id`)
+            ) ENGINE = " . _MYSQL_ENGINE_ . "DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;"
         ];
 
         foreach($queries as $query) {
@@ -248,7 +259,9 @@ class Satispay extends PaymentModule
     }
 
     /**
-     * Load the configuration form
+     * Load the configuration form.
+     *
+     * @return string The HTML form content.
      */
     public function getContent()
     {
@@ -310,6 +323,8 @@ class Satispay extends PaymentModule
      * Add assets in Satispay config page.
      *
      * @param array $params
+     *
+     * @return void
      */
     public function hookActionAdminControllerSetMedia(array $params)
     {
@@ -341,6 +356,79 @@ class Satispay extends PaymentModule
         // $amount = $params['amount'];
 
         return $params['amount'];
+    }
+
+    /**
+     * This hook allows to show the refund form in the order page.
+     *
+     * @param array $params
+     *
+     * @return string The HTML template.
+     */
+    public function hookDisplayAdminOrderMainBottom($params)
+    {
+        $order = new Order($params['id_order']);
+
+        if ($order->module !== $this->name) {
+            return;
+        }
+
+        $orderPayment = $order->getOrderPayments();
+
+        if (count($orderPayment) === 0) return;
+
+        /** @var OrderPayment $orderPayment */
+        $orderPayment = $orderPayment[0];
+
+        if ($this->name !== $order->module) return;
+
+        $currency = new Currency($order->id_currency);
+
+        $satispayRefunds = SatispayRefund::getByPaymentId($orderPayment->transaction_id);
+
+        $this->context->smarty->assign([
+            'order' => $order,
+            'order_refunded' => $order->current_state === (int) Configuration::get('PS_OS_REFUND'),
+
+            'refunds' => $satispayRefunds,
+            'currency' => $currency,
+
+            'error_message' => $this->flash('refund-error-message'),
+            'success_message' => $this->flash('refund-success-message'),
+
+            'satispay_refund_url' => $this->context->link->getAdminLink('AdminSatispayRefund'),
+        ]);
+
+        return $this->display(__FILE__, 'views/admin/templates/hook/adminOrderTab.tpl');
+    }
+
+    /**
+     * Sets or retrieves a flash message value from the cookie.
+     *
+     * If a value is provided, it will store the value in the cookie under a
+     * key combining the module name and the provided name. If no value is provided,
+     * it will retrieve and then remove the value from the cookie.
+     *
+     * @param string $name The key name for the flash message.
+     * @param mixed|null $value The value to set for the flash message. If null, the method retrieves and deletes the message.
+     *
+     * @return mixed|null The flash message value or null if not set.
+     */
+    public function flash($name, $value = null)
+    {
+        $name = $this->name . '_' . $name;
+
+        if ($value !== null) {
+            $this->context->cookie->{$name} = $value;
+        } else {
+            $value = isset($this->context->cookie->{$name}) ? $this->context->cookie->{$name} : null;
+
+            unset($this->context->cookie->{$name});
+        }
+
+        $this->context->cookie->write();
+
+        return $value;
     }
 
     /**
