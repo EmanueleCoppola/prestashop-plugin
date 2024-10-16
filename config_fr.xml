@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <name>satispay</name>
+    <displayName><![CDATA[Satispay]]></displayName>
+    <version><![CDATA[3.0.0]]></version>
+    <description><![CDATA[Simplifiez vos paiements avec Satispay. Rapide, facile et sûr. Économisez du temps et de l'argent.]]></description>
+    <author><![CDATA[Satispay]]></author>
+    <tab><![CDATA[payments_gateways]]></tab>
+    <is_configurable>1</is_configurable>
+    <need_instance>1</need_instance>
+</module>
