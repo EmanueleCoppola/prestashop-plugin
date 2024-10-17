@@ -32,7 +32,7 @@ $_MODULE['<{satispay}prestashop>callback-health-check-field_c89377ae9a3118060ea7
 $_MODULE['<{satispay}prestashop>callback-health-check-field_8a41888ec5629e31930b5f54a31c679b'] = 'Il controllo di integrità della callback è in esecuzione, aggiorna questa pagina tra un po\'.';
 $_MODULE['<{satispay}prestashop>callback-health-check-field_b67cf5dbfd2eac7a1d4902e1007c05e2'] = 'La tua installazione di Prestashop sta attualmente riscontrando problemi nel ricevere la callback server-to-server.';
 $_MODULE['<{satispay}prestashop>callback-health-check-field_fff165ba3e9488b0f7d6778897dd9e10'] = 'Verifica che il firewall di rete o il firewall applicativo (ad es. ModSecurity) non stiano bloccando la comunicazione con i server Satispay.';
-$_MODULE['<{satispay}prestashop>callback-health-check-field_5a61a37f481a02297b62440d50f3b9c9'] = 'Per maggiori informazioni leggi qui.';
+$_MODULE['<{satispay}prestashop>callback-health-check-field_85043f241ae85ec0757e22c9dc104b44'] = 'Per maggiori informazioni leggi %s qui.%s';
 $_MODULE['<{satispay}prestashop>adminordertab_14e753957448725d98f7fe03c2611fc1'] = 'Rimborsi Satispay (%d)';
 $_MODULE['<{satispay}prestashop>adminordertab_9a49152f05f1c38bc892d4c3530c0d18'] = 'Data rimborso';
 $_MODULE['<{satispay}prestashop>adminordertab_ea4ef81603749d8f4b0573ca2f926eb9'] = 'ID rimborso';

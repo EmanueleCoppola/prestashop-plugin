@@ -16,6 +16,6 @@
         <br><br>
         {l s='Please verify that your network firewall or your application firewall (e.g. ModSecurity) are not blocking the comunication with the Satispay servers.' mod='satispay'}
         <br><br>
-        {l s='For more information read <a href="https://developers.satispay.com/reference/callback-s2s" target="_blank">here</a>.' mod='satispay'}
+        {l s='For more information read %s here.%s' mod='satispay' sprintf=['<a href="https://developers.satispay.com/reference/callback-s2s" target="_blank">', '</a>']}
     </div>
 </div>

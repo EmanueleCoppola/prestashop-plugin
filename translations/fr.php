@@ -3,7 +3,7 @@
 global $_MODULE;
 $_MODULE = array();
 $_MODULE['<{satispay}prestashop>satispay_86367103eed16b879a9d5128c99f97a4'] = 'Satispay';
-$_MODULE['<{satispay}prestashop>satispay_b5ab87716fff1b57df17088d440ccc80'] = 'Économisez du temps et de l\'argent en recevant des paiements de vos clients avec Satispay. Simple, rapide et sécurisé.';
+$_MODULE['<{satispay}prestashop>satispay_b5ab87716fff1b57df17088d440ccc80'] = 'Simplifiez vos paiements avec Satispay. Rapide, facile et sûr. Économisez du temps et de l\'argent.';
 $_MODULE['<{satispay}prestashop>satispay_6cef7023d4b06b1c984e65e0b8807a21'] = 'Payer avec Satispay';
 $_MODULE['<{satispay}prestashop>configform_4410b80f354d94d6dc49129ebadc6b86'] = 'Paramètres Satispay';
 $_MODULE['<{satispay}prestashop>configform_6a122e5c7cb7d36caaef7457e1f6034d'] = 'Code d\'activation';
@@ -32,7 +32,7 @@ $_MODULE['<{satispay}prestashop>callback-health-check-field_c89377ae9a3118060ea7
 $_MODULE['<{satispay}prestashop>callback-health-check-field_8a41888ec5629e31930b5f54a31c679b'] = 'Le contrôle d\'intégrité de la callback est en cours, veuillez actualiser cette page dans un moment.';
 $_MODULE['<{satispay}prestashop>callback-health-check-field_b67cf5dbfd2eac7a1d4902e1007c05e2'] = 'Votre installation de Prestashop rencontre actuellement des problèmes pour recevoir la callback de serveur à serveur.';
 $_MODULE['<{satispay}prestashop>callback-health-check-field_fff165ba3e9488b0f7d6778897dd9e10'] = 'Vérifiez que votre pare-feu réseau ou votre pare-feu applicatif (par exemple, ModSecurity) ne bloque pas la communication avec les serveurs Satispay.';
-$_MODULE['<{satispay}prestashop>callback-health-check-field_5a61a37f481a02297b62440d50f3b9c9'] = 'Pour plus d\'informations, lisez ici.';
+$_MODULE['<{satispay}prestashop>callback-health-check-field_85043f241ae85ec0757e22c9dc104b44'] = 'Pour plus d\'informations, lisez %s ici.%s';
 $_MODULE['<{satispay}prestashop>adminordertab_14e753957448725d98f7fe03c2611fc1'] = 'Remboursements Satispay (%d)';
 $_MODULE['<{satispay}prestashop>adminordertab_9a49152f05f1c38bc892d4c3530c0d18'] = 'Date du remboursement';
 $_MODULE['<{satispay}prestashop>adminordertab_ea4ef81603749d8f4b0573ca2f926eb9'] = 'ID du remboursement';
