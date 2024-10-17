@@ -50,7 +50,7 @@ class AdminSatispayRefundController extends ModuleAdminController
                             'vieworder' => 1,
                             'id_order' => $orderId
                         ]
-                    )
+                    ) . '#view_satispay_refunds'
         );
     }
 

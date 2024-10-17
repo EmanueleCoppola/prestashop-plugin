@@ -1,4 +1,4 @@
-<div class="card mt-2">
+<div class="card mt-2" id="view_satispay_refunds">
     <div class="card-header">
         <h3 class="card-header-title">
             {l s='Satispay Refunds (%d)' mod='satispay' sprintf=[count($refunds)]}
