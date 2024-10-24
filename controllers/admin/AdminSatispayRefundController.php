@@ -134,30 +134,32 @@ class AdminSatispayRefundController extends ModuleAdminController
                 'amount_unit' => $refundAmount
             ]);
 
-            // refunded and refundable recalculation
-            $refundedAmount += $refundAmount;
-            $refundableAmount = $satispayPayment->amount_unit - $refundedAmount;
-    
-            $satispayRefundModel = new SatispayRefund();
-            $satispayRefundModel
-                ->hydrate([
-                    'refund_id' => $satispayRefund->id,
-                    'payment_id' => $orderPayment->transaction_id,
-                    'amount_unit' => $refundAmount
-                ]);
+            if ($satispayRefund->status === 'ACCEPTED') {
+                // refunded and refundable recalculation
+                $refundedAmount += $refundAmount;
+                $refundableAmount = $satispayPayment->amount_unit - $refundedAmount;
 
-            if ($satispayRefundModel->save()) {
-                if ($refundableAmount === 0) {
-                    $order
-                        ->setCurrentState(
-                            (int) Configuration::get('PS_OS_REFUND')
-                        );
+                $satispayRefundModel = new SatispayRefund();
+                $satispayRefundModel
+                    ->hydrate([
+                        'refund_id' => $satispayRefund->id,
+                        'payment_id' => $orderPayment->transaction_id,
+                        'amount_unit' => $refundAmount
+                    ]);
+
+                if ($satispayRefundModel->save()) {
+                    if ($refundableAmount === 0) {
+                        $order
+                            ->setCurrentState(
+                                (int) Configuration::get('PS_OS_REFUND')
+                            );
+                    }
+                    
+                    $this->module->flash(
+                        'refund-success-message',
+                        sprintf($this->module->l('A refund of %s has been correctly processed.'), $this->formatPrice($refundAmount)),
+                    );
                 }
-                
-                $this->module->flash(
-                    'refund-success-message',
-                    sprintf($this->module->l('A refund of %s has been correctly processed.'), $this->formatPrice($refundAmount)),
-                );
             }
         } catch (Exception) {
             $this->module->flash(
