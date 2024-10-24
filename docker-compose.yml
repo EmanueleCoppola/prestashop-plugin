@@ -1,0 +1,47 @@
+services:
+  mysql:
+    container_name: satispay_prestashop-mysql
+    image: mysql:5.7
+    platform: linux/x86_64
+    restart: unless-stopped
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: prestashop
+    networks:
+      - satispay_prestashop_network
+    volumes:
+      - satispay_prestashop_dbdata:/var/lib/mysql
+  prestashop:
+    container_name: satispay_prestashop-prestashop
+    image: prestashop/prestashop:8
+    platform: linux/x86_64
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    ports:
+      - 8080:80
+    environment:
+      DB_SERVER: satispay_prestashop-mysql
+      DB_NAME: prestashop
+      DB_USER: root
+      DB_PASSWD: admin
+      PS_INSTALL_AUTO: 1
+      PS_DOMAIN: localhost:8080
+      PS_FOLDER_ADMIN: admin25
+      PS_FOLDER_INSTALL: install25
+    networks:
+      - satispay_prestashop_network
+    volumes:
+      - type: bind
+        source: ./
+        target: /var/www/html/modules/satispay
+      - type: bind
+        source: ./psdata
+        target: /var/www/html
+networks:
+    satispay_prestashop_network:
+volumes:
+  satispay_prestashop_dbdata:
+  satispay_prestashop_psdata:

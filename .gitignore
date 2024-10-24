@@ -8,3 +8,6 @@ satispay.zip
 # Composer
 vendor/
 composer.lock
+
+psdata/*
+!psdata/.gitkeep
