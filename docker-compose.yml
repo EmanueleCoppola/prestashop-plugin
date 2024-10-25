@@ -31,6 +31,9 @@ services:
       PS_DOMAIN: localhost:8080
       PS_FOLDER_ADMIN: admin25
       PS_FOLDER_INSTALL: install25
+      PS_USE_DOCKER_MAILDEV: 1
+      ADMIN_MAIL: prestashop@satispay.com
+      ADMIN_PASSWD: satispay
     networks:
       - satispay_prestashop_network
     volumes:
@@ -40,6 +43,13 @@ services:
       - type: bind
         source: ./psdata
         target: /var/www/html
+  maildev:
+    container_name: satispay_prestashop-maildev
+    image: 'maildev/maildev'
+    ports:
+      - "1080:1080"
+    networks:
+      - satispay_prestashop_network
 networks:
     satispay_prestashop_network:
 volumes:
