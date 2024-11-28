@@ -46,14 +46,17 @@ class Satispay extends PaymentModule
     const SATISPAY_PUBLIC_KEY  = 'SATISPAY_PUBLIC_KEY';
     const SATISPAY_KEY_ID      = 'SATISPAY_KEY_ID';
 
-    // settings
-    const SATISPAY_SANDBOX = 'SATISPAY_SANDBOX';
-    
     // TODO: implement the payment duration
     const SATISPAY_PAYMENT_DURATION_MINUTES = 'SATISPAY_PAYMENT_DURATION_MINUTES';
 
+    // settings
+    const SATISPAY_SANDBOX = 'SATISPAY_SANDBOX';
+
     // custom hooks
     const SATISPAY_MEAL_VOUCHER_AMOUNT_HOOK = 'actionSatispayMealVoucherAmount';
+
+    // --
+    const SATISPAY_LOCKING_TIMEOUT_DURATION_SECONDS = 8;
 
     /**
      * The CallbackHealthCheck instance.
@@ -153,7 +156,8 @@ class Satispay extends PaymentModule
               `reference` VARCHAR(255),
               `amount_unit` INT(11) UNSIGNED,
               `date_add` DATETIME,
-              `date_upd` DATETIME
+              `date_upd` DATETIME,
+              INDEX (`cart_id`)
             ) ENGINE = " . _MYSQL_ENGINE_ . "DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;",
             "CREATE TABLE IF NOT EXISTS `" . _DB_PREFIX_ . "satispay_locks` (
                 `name` VARCHAR(255) NOT NULL,
@@ -166,7 +170,7 @@ class Satispay extends PaymentModule
                 `payment_id` VARCHAR(255) NOT NULL,
                 `amount_unit` INT(11) UNSIGNED,
                 `date_add` DATETIME,
-                INDEX (`payment_id`)
+                INDEX (`payment_id`),
             ) ENGINE = " . _MYSQL_ENGINE_ . "DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;"
         ];
 

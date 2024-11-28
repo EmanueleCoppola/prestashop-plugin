@@ -32,7 +32,7 @@ class SatispayCallbackModuleFrontController extends ModuleFrontController
         $lock = new Lock($paymentId);
 
         $lock->block(
-            5,
+            Satispay::SATISPAY_LOCKING_TIMEOUT_DURATION_SECONDS,
             function() use ($paymentId) {
                 try {
                     $satispayPendingPayment = SatispayPendingPayment::getByPaymentId($paymentId);
@@ -58,23 +58,21 @@ class SatispayCallbackModuleFrontController extends ModuleFrontController
                         );
 
                         if (!Validate::isLoadedObject($order)) {
-                            try {
-                                $cancelOrRefund = Payment::update($paymentId, ['action' => 'CANCEL_OR_REFUND']);
+                            $cancelOrRefund = Payment::update($paymentId, ['action' => 'CANCEL_OR_REFUND']);
 
-                                if (
-                                    $cancelOrRefund->status === 'CANCELED' ||
-                                    $cancelOrRefund->status === 'ACCEPTED'
-                                ) {
-                                    $satispayPendingPayment->delete();
-                                }
-                            } catch (Exception) {}
+                            if (
+                                $cancelOrRefund->status === 'CANCELED' ||
+                                $cancelOrRefund->status === 'ACCEPTED'
+                            ) {
+                                $satispayPendingPayment->delete();
+                            }
                         }
                     } else if ($satispayPayment->status === 'CANCELED') {
                         $satispayPendingPayment->delete();
                     }
                 } catch (Exception $e) {
                     $this->module->log(
-                        get_class($this) . "@postProcess error while processing the callback {$e->getMessage()}",
+                        get_class($this) . "@postProcess error while processing the callback: {$e->getMessage()}",
                         PrestaShopLogger::LOG_SEVERITY_LEVEL_ERROR
                     );
                 }
