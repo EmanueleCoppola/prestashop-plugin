@@ -9,4 +9,4 @@ docker-compose down && echo "✅ Docker containers stopped and removed." || { ec
 
 # Clean the psdata directory (keeping the folder and .gitkeep files)
 echo "🧹 Cleaning contents of psdata directory, preserving .gitkeep files..."
-find psdata -mindepth 1 ! -name '.gitkeep' -exec rm -rf {} + && echo "✅ Cleaned psdata directory." || { echo "❌ Failed to clean psdata directory."; exit 1; }
+rm -rf ./psdata && echo "✅ Cleaned psdata directory." || { echo "❌ Failed to clean psdata directory."; exit 1; }

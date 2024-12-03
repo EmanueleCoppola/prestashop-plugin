@@ -1,45 +1,55 @@
 #!/bin/bash
 
-# Navigate to the parent directory
-cd "$(dirname "$0")/.."
+# Navigate to the script's directory
+cd "$(dirname "$0")/.." || { echo "❌ Failed to navigate to script directory."; exit 1; }
 
 echo "🚀 Starting Satispay Module Packaging..."
 
+# Install composer dependencies (excluding dev)
 echo "📦 Installing composer dependencies (excluding dev)..."
 composer install --no-dev && echo "✅ Dependencies installed." || { echo "❌ Installation failed."; exit 1; }
 
 # Read .gitattributes and gather paths marked as export-ignore
-echo "🔍 Reading .gitattributes to exclude export-ignore paths..."
+echo "🔍 Reading .gitattributes to gather export-ignore paths..."
 EXCLUDES=()
 while IFS= read -r line; do
     if [[ $line == *"export-ignore"* ]]; then
-        # Extract the path before "export-ignore"
         PATH_TO_EXCLUDE=$(echo "$line" | awk '{print $1}')
         EXCLUDES+=("$PATH_TO_EXCLUDE")
     fi
 done < .gitattributes
 
-# Create a temporary directory for the flat structure
-TEMP_DIR="tmp"
-rm -rf "$TEMP_DIR"
-mkdir "$TEMP_DIR"
+if [ ${#EXCLUDES[@]} -eq 0 ]; then
+    echo "⚠️  No export-ignore paths found in .gitattributes."
+else
+    echo "📝 Paths marked as export-ignore: ${EXCLUDES[*]}"
+fi
 
-# Copy files to the temporary directory except those excluded
-echo "📂 Copying files to a flat structure..."
-for file in *; do
-    # Check if the file is in the exclude list
-    if [[ ! " ${EXCLUDES[@]} " =~ " ${file} " ]]; then
-        cp -- "$file" "$TEMP_DIR/"  # Use -- to indicate end of options
-    fi
+# Create a temporary directory for the flat structure
+TEMP_DIR="tmp/"
+MODULE_DIR="$TEMP_DIR/satispay"
+echo "📂 Preparing temporary directory: $TEMP_DIR"
+rm -rf "$TEMP_DIR satispay.zip"
+mkdir -p "$MODULE_DIR" || { echo "❌ Failed to create temporary directory."; exit 1; }
+
+# Create the rsync exclude arguments
+EXCLUDE_ARGS=()
+for pattern in "${EXCLUDES[@]}"; do
+    EXCLUDE_ARGS+=(--exclude="$pattern")
 done
 
-# Create the zip archive from the temporary directory
+# Copy files while excluding specified paths
+echo "🚀 Copying files (excluding: ${EXCLUDES[*]})..."
+rsync -av "${EXCLUDE_ARGS[@]}" "./" "$MODULE_DIR" && echo "✅ Files copied successfully." || { echo "❌ Failed to copy files."; exit 1; }
+
+# Create the zip archive from the satispay folder
 echo "🗜️  Creating Satispay archive..."
-cd "$TEMP_DIR"
-zip -r ../satispay.zip ./* && echo "✅ Archive created: satispay.zip" || { echo "❌ Failed to create archive."; exit 1; }
+cd "$TEMP_DIR" || { echo "❌ Failed to navigate to temporary directory."; exit 1; }
+zip -r ../satispay.zip satispay && echo "✅ Archive created: satispay.zip" || { echo "❌ Failed to create archive."; exit 1; }
 cd ..
 
 # Clean up
-rm -rf "$TEMP_DIR"
+echo "🧹 Cleaning up temporary directory: $TEMP_DIR"
+rm -rf "$TEMP_DIR" && echo "✅ Cleanup complete."
 
 echo "🎉 Packaging complete!"
