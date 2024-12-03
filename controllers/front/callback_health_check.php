@@ -14,6 +14,14 @@ use \Satispay;
 class SatispayCallback_Health_CheckModuleFrontController extends ModuleFrontController
 {
     /**
+     * Override the default maintenance mode behavior to allow Satispay
+     * activation even when the shop is in maintenance mode.
+     *
+     * Used for admin testing only.
+     */
+    protected function displayMaintenancePage() {}
+
+    /**
      * Register the HTTP callback by the Satispay servers.
      * 
      * @see https://developers.satispay.com/reference/callback-s2s

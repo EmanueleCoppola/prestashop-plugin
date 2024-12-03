@@ -16,6 +16,14 @@ use SatispayGBusiness\Payment;
 class SatispayCallbackModuleFrontController extends ModuleFrontController
 {
     /**
+     * Override the default maintenance mode behavior to allow Satispay
+     * handle callbacks even when the shop is in maintenance mode.
+     *
+     * Used for admin testing only.
+     */
+    protected function displayMaintenancePage() {}
+
+    /**
      * Process the incoming Satispay callback request.
      *
      * This method retrieves the payment ID from the request, attempts to lock the payment
