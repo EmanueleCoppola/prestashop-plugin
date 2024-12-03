@@ -4,6 +4,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+use Carbon\Carbon;
 use SatispayGBusiness\Payment;
 use Satispay\Prestashop\Classes\Models\SatispayPendingPayment;
 
@@ -83,7 +84,13 @@ class SatispayPaymentModuleFrontController extends ModuleFrontController
                 ),
                 'metadata' => [
                     'cart_id' => $cart->id,
-                ]
+                ],
+                'expiration_date' =>
+                    Carbon::now()
+                        ->addMinutes(
+                            (int) Configuration::get(Satispay::SATISPAY_PAYMENT_DURATION_MINUTES, 60)
+                        )
+                        ->format("Y-m-d\TH:i:s.v\Z")
             ]);
 
             $satispayPendingPayment

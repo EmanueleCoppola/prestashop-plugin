@@ -93,18 +93,20 @@ class CallbackHealthCheck
                 'amount_unit' => 1,
                 'external_code' => "Prestashop callback-health {$nonce}",
                 'callback_url' =>
-                    $this
-                        ->context
-                        ->link
-                        ->getModuleLink(
-                            $this->module->name,
-                            'callback_health_check',
-                            [
-                                'nonce' => $nonce,
-                                'payment_id' => '{uuid}',
-                            ],
-                            true
-                        ),
+                    urldecode(
+                        $this
+                            ->context
+                            ->link
+                            ->getModuleLink(
+                                $this->module->name,
+                                'callback_health_check',
+                                [
+                                    'nonce' => $nonce,
+                                    'payment_id' => '{uuid}',
+                                ],
+                                true
+                            )
+                    ),
                 'expiration_date' =>
                     Carbon::now()
                         ->timezone('UTC')

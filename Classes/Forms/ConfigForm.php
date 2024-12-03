@@ -81,6 +81,13 @@ class ConfigForm extends Form
                                     ])
                                     ->fetch('module:satispay/views/admin/templates/callback-health-check-field.tpl')
                             )
+                    ],
+                    [
+                        'col' => 3,
+                        'type' => 'text',
+                        'label' => $this->l('Payment Duration (in minutes)'),
+                        'name' => $this->field('payment-duration-minutes'),
+                        'desc' => $this->l('Specify the duration (in minutes) within which the payment must be completed after its creation. The miminum amount is 1 minute.'),
                     ]
                 ],
                 'submit' => [
@@ -98,7 +105,8 @@ class ConfigForm extends Form
         return [
             $this->field('activation-code') => Configuration::get(Satispay::SATISPAY_ACTIVATION_CODE),
             $this->field('sandbox') => Configuration::get(Satispay::SATISPAY_SANDBOX, false),
-            $this->field('callback') => null
+            $this->field('callback') => null,
+            $this->field('payment-duration-minutes') => (int) Configuration::get(Satispay::SATISPAY_PAYMENT_DURATION_MINUTES, 60)
         ];
     }
 
@@ -142,50 +150,58 @@ class ConfigForm extends Form
         $oldActivationCode = Configuration::get(Satispay::SATISPAY_ACTIVATION_CODE, '');
         $newActivationCode = Tools::getValue($this->field('activation-code'));
 
+        Configuration::updateValue(
+            Satispay::SATISPAY_PAYMENT_DURATION_MINUTES,
+            max(
+                1,
+                (int) Tools::getValue($this->field('payment-duration-minutes'))
+            )
+        );
+
         if (
-            $oldSandbox === $newSandbox &&
-            $oldActivationCode === $newActivationCode
+            $oldSandbox !== $newSandbox &&
+            $oldActivationCode !== $newActivationCode
         ) {
-            return;
+            // use the activation code
+            $activated = false;
+
+            try {
+                $authentication = Api::authenticateWithToken($newActivationCode);
+
+                Configuration::updateValue(Satispay::SATISPAY_SANDBOX, $newSandbox);
+
+                Configuration::updateValue(Satispay::SATISPAY_ACTIVATION_CODE, $newActivationCode);
+                Configuration::updateValue(Satispay::SATISPAY_KEY_ID, $authentication->keyId);
+                Configuration::updateValue(Satispay::SATISPAY_PRIVATE_KEY, $authentication->privateKey);
+                Configuration::updateValue(Satispay::SATISPAY_PUBLIC_KEY, $authentication->publicKey);
+
+                $this->module->bootSatispayClient();
+
+                $this->module->log(get_class($this) . "@process activation succedeed with code {$newActivationCode}");
+                $this->success = $this->l('Activation successful.');
+
+                $activated = true;
+            } catch (Exception $e) {
+                $this->module->bootSatispayClient();
+
+                $this->module->log(get_class($this) . "@process activation failed {$e->getMessage()}", PrestaShopLogger::LOG_SEVERITY_LEVEL_ERROR);
+                $this
+                    ->error =
+                        sprintf(
+                            $this->l('The Activation Code "%s" is invalid. Please verify that it belongs to the %s environment and it\'s not beign used before.'),
+                            $newActivationCode,
+                            $newSandbox ? $this->l('sandbox') : $this->l('production')
+                        );
+            }
+
+            // trigger callback health-check
+            if (!$activated) {
+                return;
+            }
+
+            $this->module->callbackHealthCheck->run();
+        } else {
+            $this->success = $this->l('Settings saved succesfully.');
         }
-
-        // use the activation code
-        $activated = false;
-
-        try {
-            $authentication = Api::authenticateWithToken($newActivationCode);
-            
-            Configuration::updateValue(Satispay::SATISPAY_SANDBOX, $newSandbox);
-            
-            Configuration::updateValue(Satispay::SATISPAY_ACTIVATION_CODE, $newActivationCode);
-            Configuration::updateValue(Satispay::SATISPAY_KEY_ID, $authentication->keyId);
-            Configuration::updateValue(Satispay::SATISPAY_PRIVATE_KEY, $authentication->privateKey);
-            Configuration::updateValue(Satispay::SATISPAY_PUBLIC_KEY, $authentication->publicKey);
-
-            $this->module->bootSatispayClient();
-
-            $this->module->log(get_class($this) . "@process activation succedeed with code {$newActivationCode}");
-            $this->success = $this->l('Activation successful.');
-
-            $activated = true;
-        } catch (Exception $e) {
-            $this->module->bootSatispayClient();
-            
-            $this->module->log(get_class($this) . "@process activation failed {$e->getMessage()}", PrestaShopLogger::LOG_SEVERITY_LEVEL_ERROR);
-            $this
-                ->error = 
-                    sprintf(
-                        $this->l('The Activation Code "%s" is invalid. Please verify that it belongs to the %s environment and it\'s not beign used before.'),
-                        $newActivationCode,
-                        $newSandbox ? $this->l('sandbox') : $this->l('production')
-                    );
-        }
-
-        // trigger callback health-check
-        if (!$activated) {
-            return;
-        }
-
-        $this->module->callbackHealthCheck->run();
     }
 }
