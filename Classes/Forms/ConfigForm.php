@@ -2,6 +2,10 @@
 
 namespace Satispay\Prestashop\Classes\Forms;
 
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
+
 // Prestashop
 use \Configuration;
 use \Tools;
@@ -79,7 +83,7 @@ class ConfigForm extends Form
                                         // statuses = todo | pending | success | failed
                                         'status' => Configuration::get(Satispay::SATIPAY_CALLBACK_HEALTH_STATUS) ?? CallbackHealthCheck::STATUS_TODO
                                     ])
-                                    ->fetch('module:satispay/views/admin/templates/callback-health-check-field.tpl')
+                                    ->fetch('module:satispay/views/templates/admin/callback-health-check-field.tpl')
                             )
                     ],
                     [

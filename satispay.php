@@ -342,8 +342,8 @@ class Satispay extends PaymentModule
             /** @var ControllerCore $controller */
             $controller = $this->context->controller;
 
-            $controller->addJs($this->getPathUri() . "views/admin/js/{$this->name}.js");
-            $controller->addCSS($this->getPathUri() . "views/admin/css/{$this->name}.css");
+            $controller->addJs($this->getPathUri() . "views/js/admin/{$this->name}.js");
+            $controller->addCSS($this->getPathUri() . "views/css/admin/{$this->name}.css");
         }
     }
 
@@ -406,7 +406,7 @@ class Satispay extends PaymentModule
             'satispay_refund_url' => $this->context->link->getAdminLink('AdminSatispayRefund'),
         ]);
 
-        return $this->display(__FILE__, 'views/admin/templates/hook/adminOrderTab.tpl');
+        return $this->display(__FILE__, 'views/templates/admin/hook/adminOrderTab.tpl');
     }
 
     /**

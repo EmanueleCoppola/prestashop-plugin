@@ -36,7 +36,5 @@ class SatispayCallback_Health_CheckModuleFrontController extends ModuleFrontCont
         );
 
         header('HTTP/1.1 204 No Content');
-
-        return;
     }
 }

@@ -1,5 +1,9 @@
 <?php
 
+if (!defined('_PS_VERSION_')) {
+    exit;
+}
+
 use Satispay\Prestashop\Classes\Models\SatispayRefund;
 use SatispayGBusiness\Payment;
 
@@ -31,8 +35,8 @@ class AdminSatispayRefundController extends ModuleAdminController
         // process amount
         $refundAmount = Tools::getValue('satispay_refund_amount');
         $refundAmount = str_replace(',', '.', $refundAmount);
-        $refundAmount = floatval($refundAmount) * 100;
-        $refundAmount = intval($refundAmount);
+        $refundAmount = ((float) $refundAmount) * 100;
+        $refundAmount = ((int) $refundAmount);
 
         // process the refund
         $this->refund($orderId, $refundAmount);

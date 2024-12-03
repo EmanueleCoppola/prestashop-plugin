@@ -1,6 +1,7 @@
 {
     "name": "satispay/prestashop-module",
     "description": "A PrestaShop module for Satispay payments.",
+    "version": "3.0.0",
     "authors": [
         {
             "name": "Emanuele Coppola",

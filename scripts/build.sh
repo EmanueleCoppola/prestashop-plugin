@@ -45,7 +45,7 @@ rsync -av "${EXCLUDE_ARGS[@]}" "./" "$MODULE_DIR" && echo "✅ Files copied succ
 # Create the zip archive from the satispay folder
 echo "🗜️  Creating Satispay archive..."
 cd "$TEMP_DIR" || { echo "❌ Failed to navigate to temporary directory."; exit 1; }
-zip -r ../satispay.zip satispay && echo "✅ Archive created: satispay.zip" || { echo "❌ Failed to create archive."; exit 1; }
+zip -r ../satispay.zip satispay -x "**/.DS_Store" && echo "✅ Archive created: satispay.zip" || { echo "❌ Failed to create archive."; exit 1; }
 cd ..
 
 # Clean up
