@@ -77,7 +77,7 @@ class ConfigForm extends Form
                                 $smarty
                                     ->assign([
                                         // statuses = todo | pending | success | failed
-                                        'status' => Configuration::get(Satispay::SATIPAY_CALLBACK_HEALTH_STATUS, CallbackHealthCheck::STATUS_TODO)
+                                        'status' => Configuration::get(Satispay::SATIPAY_CALLBACK_HEALTH_STATUS) ?? CallbackHealthCheck::STATUS_TODO
                                     ])
                                     ->fetch('module:satispay/views/admin/templates/callback-health-check-field.tpl')
                             )
@@ -104,9 +104,9 @@ class ConfigForm extends Form
     {
         return [
             $this->field('activation-code') => Configuration::get(Satispay::SATISPAY_ACTIVATION_CODE),
-            $this->field('sandbox') => Configuration::get(Satispay::SATISPAY_SANDBOX, false),
+            $this->field('sandbox') => Configuration::get(Satispay::SATISPAY_SANDBOX),
             $this->field('callback') => null,
-            $this->field('payment-duration-minutes') => (int) Configuration::get(Satispay::SATISPAY_PAYMENT_DURATION_MINUTES, 60)
+            $this->field('payment-duration-minutes') => Configuration::get(Satispay::SATISPAY_PAYMENT_DURATION_MINUTES) ?? '60'
         ];
     }
 
@@ -115,7 +115,7 @@ class ConfigForm extends Form
      */
     public function render()
     {
-        $sandbox = Configuration::get(Satispay::SATISPAY_SANDBOX, false);
+        $sandbox = Configuration::get(Satispay::SATISPAY_SANDBOX) ?? false;
 
         //
         $activationCode = Configuration::get(Satispay::SATISPAY_ACTIVATION_CODE);
