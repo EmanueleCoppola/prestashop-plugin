@@ -88,7 +88,7 @@ class SatispayPaymentModuleFrontController extends ModuleFrontController
                 'expiration_date' =>
                     Carbon::now()
                         ->addMinutes(
-                            (int) Configuration::get(Satispay::SATISPAY_PAYMENT_DURATION_MINUTES, 60)
+                            (int) Configuration::get(Satispay::SATISPAY_PAYMENT_DURATION_MINUTES) ?? Satispay::SATISPAY_PAYMENT_DURATION_MINUTES_DEFAULT
                         )
                         ->format("Y-m-d\TH:i:s.v\Z")
             ]);

@@ -106,7 +106,7 @@ class ConfigForm extends Form
             $this->field('activation-code') => Configuration::get(Satispay::SATISPAY_ACTIVATION_CODE),
             $this->field('sandbox') => Configuration::get(Satispay::SATISPAY_SANDBOX),
             $this->field('callback') => null,
-            $this->field('payment-duration-minutes') => Configuration::get(Satispay::SATISPAY_PAYMENT_DURATION_MINUTES) ?? '60'
+            $this->field('payment-duration-minutes') => Configuration::get(Satispay::SATISPAY_PAYMENT_DURATION_MINUTES) ?? Satispay::SATISPAY_PAYMENT_DURATION_MINUTES_DEFAULT
         ];
     }
 

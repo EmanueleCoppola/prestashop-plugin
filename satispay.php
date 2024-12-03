@@ -4,7 +4,9 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-require_once __DIR__ . '/vendor/autoload.php';
+if (file_exists(__DIR__ . '/vendor/autoload.php')) {
+    require_once __DIR__ . '/vendor/autoload.php';
+}
 
 // Prestashop
 use PrestaShop\PrestaShop\Core\Payment\PaymentOption;
@@ -48,6 +50,7 @@ class Satispay extends PaymentModule
 
     // TODO: implement the payment duration
     const SATISPAY_PAYMENT_DURATION_MINUTES = 'SATISPAY_PAYMENT_DURATION_MINUTES';
+    const SATISPAY_PAYMENT_DURATION_MINUTES_DEFAULT = 60;
 
     // settings
     const SATISPAY_SANDBOX = 'SATISPAY_SANDBOX';
@@ -158,20 +161,20 @@ class Satispay extends PaymentModule
               `date_add` DATETIME,
               `date_upd` DATETIME,
               INDEX (`cart_id`)
-            ) ENGINE = " . _MYSQL_ENGINE_ . "DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;",
+            ) ENGINE=" . _MYSQL_ENGINE_ . " DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;",
             "CREATE TABLE IF NOT EXISTS `" . _DB_PREFIX_ . "satispay_locks` (
                 `name` VARCHAR(255) NOT NULL,
                 `expires_at` DATETIME(3) NOT NULL,
                 PRIMARY KEY (`name`)
-            ) ENGINE = " . _MYSQL_ENGINE_ . "DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;",
+            ) ENGINE=" . _MYSQL_ENGINE_ . " DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;",
             "CREATE TABLE IF NOT EXISTS `" . _DB_PREFIX_ . "satispay_refunds` (
                 `id` INT(11) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
                 `refund_id` VARCHAR(255) NOT NULL,
                 `payment_id` VARCHAR(255) NOT NULL,
                 `amount_unit` INT(11) UNSIGNED,
                 `date_add` DATETIME,
-                INDEX (`payment_id`),
-            ) ENGINE = " . _MYSQL_ENGINE_ . "DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;"
+                INDEX (`payment_id`)
+            ) ENGINE=" . _MYSQL_ENGINE_ . " DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;"
         ];
 
         foreach($queries as $query) {
