@@ -152,12 +152,15 @@ class Satispay extends PaymentModule
     public function installDb()
     {
         $queries = [
-            "CREATE TABLE IF NOT EXISTS `" . _DB_PREFIX_ . "satispay_pending_payments` (
+            "CREATE TABLE IF NOT EXISTS `" . _DB_PREFIX_ . "satispay_payments` (
               `id` INT(11) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+              `status` VARCHAR(255) DEFAULT NULL,
+              `order_id` INT(11) DEFAULT NULL,
               `cart_id` INT(11),
               `payment_id` VARCHAR(255),
               `reference` VARCHAR(255),
               `amount_unit` INT(11) UNSIGNED,
+              `date_exp` DATETIME DEFAULT NULL,
               `date_add` DATETIME,
               `date_upd` DATETIME,
               INDEX (`cart_id`)

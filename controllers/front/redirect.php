@@ -42,9 +42,18 @@ class SatispayRedirectModuleFrontController extends ModuleFrontController
 
         return
             $lock->block(
-                5,
+                Satispay::SATISPAY_LOCKING_TIMEOUT_DURATION_SECONDS,
                 function() use ($satispayPendingPayment) {
-                    $order = Order::getByCartId($satispayPendingPayment->cart_id);
+
+                    $order = null;
+
+                    if ($satispayPendingPayment->order_id) {
+                        $order = new Order($satispayPendingPayment->order_id);
+                    }
+                    
+                    if (!Validate::isLoadedObject($order)) {
+                        $order = Order::getByCartId($satispayPendingPayment->cart_id);
+                    }
 
                     // stop if we already have an order with this payment
                     // this means that the order was successful

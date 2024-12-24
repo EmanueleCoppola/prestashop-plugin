@@ -48,12 +48,18 @@ class SatispayCallbackModuleFrontController extends ModuleFrontController
                     // stop if we don't have any pending payment with that id
                     if (!Validate::isLoadedObject($satispayPendingPayment)) return;
 
-                    $order = Order::getByCartId($satispayPendingPayment->cart_id);
+                    $order = null;
+
+                    if ($satispayPendingPayment->order_id) {
+                        $order = new Order($satispayPendingPayment->order_id);
+                    }
+                    
+                    if (!Validate::isLoadedObject($order)) {
+                        $order = Order::getByCartId($satispayPendingPayment->cart_id);
+                    }
 
                     // stop if we already have an order with this payment
                     if (Validate::isLoadedObject($order)) {
-                        $satispayPendingPayment->delete();
-
                         return;
                     };
 
@@ -66,7 +72,15 @@ class SatispayCallbackModuleFrontController extends ModuleFrontController
                         );
 
                         if (!Validate::isLoadedObject($order)) {
-                            $cancelOrRefund = Payment::update($paymentId, ['action' => 'CANCEL_OR_REFUND']);
+                            $cancelOrRefund = Payment::update(
+                                $paymentId,
+                                [
+                                    'action' => 'CANCEL_OR_REFUND'
+                                ],
+                                [
+                                    'Idempotency-Key' => $satispayPendingPayment->reference
+                                ]
+                            );
 
                             if (
                                 $cancelOrRefund->status === 'CANCELED' ||

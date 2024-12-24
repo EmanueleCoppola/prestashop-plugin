@@ -27,6 +27,11 @@ class SatispayPendingPayment extends ObjectModel
     public $id;
 
     /**
+     * @var int|null The order id associated with the payment.
+     */
+    public $order_id;
+
+    /**
      * @var int The cart id associated with the payment.
      */
     public $cart_id;
@@ -68,6 +73,7 @@ class SatispayPendingPayment extends ObjectModel
         'primary' => 'id',
         'multilang' => false,
         'fields' => [
+            'order_id' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedId'],
             'cart_id' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedId'],
             'payment_id' => ['type' => self::TYPE_STRING, 'validate' => 'isString'],
             'reference' => ['type' => self::TYPE_STRING, 'validate' => 'isString'],
@@ -185,9 +191,12 @@ class SatispayPendingPayment extends ObjectModel
         );
 
         if ($validated) {
-            $this->delete();
+            $order = Order::getByCartId($cart->id);
 
-            return Order::getByCartId($cart->id);
+            $this->order_id = $order->id;
+            $this->save();
+
+            return $order;
         }
     }
 }
